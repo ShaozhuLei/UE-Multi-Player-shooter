@@ -8,6 +8,8 @@
 #include "GameFramework/Character.h"
 #include "BlastCharacter.generated.h"
 
+class UCombatComponent;
+class AWeapon;
 class UOverHeadWidget;
 
 UCLASS()
@@ -20,9 +22,13 @@ public:
 	ABlastCharacter();
 	virtual void Tick(float DeltaTime) override;
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
+	virtual void PostInitializeComponents() override;
 
 	void Move(const FInputActionValue& InputActionValue);
 	void Look(const FInputActionValue& InputActionValue);
+	void EquipButtonPressed();
+	void SetOverlappingWeapon(AWeapon* InWeapon);
 
 	/*Movement*/
 	UPROPERTY(EditDefaultsOnly, Category="Input")
@@ -33,6 +39,9 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, Category="Input")
 	TObjectPtr<UInputAction> JumpAction;
+	
+	UPROPERTY(EditDefaultsOnly, Category="Input")
+	TObjectPtr<UInputAction> EPressed;
 
 protected:
 	// Called when the game starts or when spawned
@@ -51,5 +60,18 @@ private:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UWidgetComponent> OverHeadWidget;
+
+	UPROPERTY(VisibleAnywhere)
+	TObjectPtr<UCombatComponent> Combat;
+
+	UPROPERTY(ReplicatedUsing = OnRep_OverlappingWeapon)
+	TObjectPtr<AWeapon> OverlappingWeapon;
+
+	UFUNCTION()
+	void OnRep_OverlappingWeapon(AWeapon* LastWeapon);
 	
 };
+
+
+
+

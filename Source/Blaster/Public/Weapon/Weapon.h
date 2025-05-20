@@ -7,6 +7,7 @@
 #include "EnumTypes.h"
 #include "Weapon.generated.h"
 
+class UWidgetComponent;
 class USphereComponent;
 
 UCLASS()
@@ -19,9 +20,30 @@ public:
 	AWeapon();
 	virtual void Tick(float DeltaTime) override;
 
+	void ShowPickupWidget(bool bShowWidget);
+
+	FORCEINLINE void SetWeaponState(EWeaponState State){WeaponState = State;}
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
+
+	UFUNCTION()
+	virtual void OnSphereOverlap(
+		UPrimitiveComponent* OverlappedComponent,
+		AActor* OtherActor,
+		UPrimitiveComponent* OtherComp,
+		int32 OtherBodyIndex,
+		bool bFromSweep,
+		const FHitResult& SweepResult
+	);
+
+	UFUNCTION()
+	virtual void OnSphereOverlapEnd(
+		UPrimitiveComponent* OverlappedComponent,
+		AActor* OtherActor,
+		UPrimitiveComponent* OtherComp,
+		int32 OtherBodyIndex);
 
 private:
 
@@ -31,6 +53,11 @@ private:
 	UPROPERTY(VisibleAnywhere, Category="Weapon properties")
 	TObjectPtr<USphereComponent> AreaSphere;
 
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(VisibleAnywhere, Category = "Weapon Properties")
 	EWeaponState WeaponState;
+
+	UPROPERTY(VisibleAnywhere, Category = "Weapon Properties")
+	TObjectPtr<UWidgetComponent> PickupWidget;
 };
+
+

@@ -7,8 +7,11 @@
 #include "GameFramework/SpringArmComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "EnhancedInputComponent.h"
+#include "BlasterComponents/CombatComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "HUD/OverHeadWidget.h"
+#include "Net/UnrealNetwork.h"
+#include "Weapon/Weapon.h"
 
 // Sets default values
 ABlastCharacter::ABlastCharacter()
@@ -29,6 +32,9 @@ ABlastCharacter::ABlastCharacter()
 
 	OverHeadWidget = CreateDefaultSubobject<UWidgetComponent>("OverheadWidget");
 	OverHeadWidget->SetupAttachment(GetRootComponent());
+
+	Combat = CreateDefaultSubobject<UCombatComponent>("Combat");
+	Combat->SetIsReplicated(true);
 	
 }
 
@@ -52,6 +58,35 @@ void ABlastCharacter::Tick(float DeltaTime)
 
 }
 
+void ABlastCharacter::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME_CONDITION(ABlastCharacter, OverlappingWeapon, COND_OwnerOnly);
+}
+
+void ABlastCharacter::PostInitializeComponents()
+{
+	Super::PostInitializeComponents();
+	if (Combat)
+	{
+		Combat->Character = this;
+	}
+}
+
+void ABlastCharacter::SetOverlappingWeapon(AWeapon* InWeapon)
+{
+	if (OverlappingWeapon) OverlappingWeapon->ShowPickupWidget(false);
+	
+	OverlappingWeapon = InWeapon;
+	if (IsLocallyControlled())
+	{
+		if (OverlappingWeapon)
+		{
+			OverlappingWeapon->ShowPickupWidget(true);
+		}
+	}
+}
+
 // Called to bind functionality to input
 void ABlastCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
@@ -62,6 +97,7 @@ void ABlastCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComp
 		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &ABlastCharacter::Move);
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &ABlastCharacter::Look);
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Started, this, &ACharacter::Jump);
+		EnhancedInputComponent->BindAction(EPressed, ETriggerEvent::Started, this, &ABlastCharacter::EquipButtonPressed);
 	}
 }
 
@@ -83,6 +119,22 @@ void ABlastCharacter::Look(const FInputActionValue& InputActionValue)
 	const FVector2D LookDirection = InputActionValue.Get<FVector2D>();
 	AddControllerPitchInput(LookDirection.Y);
 	AddControllerYawInput(LookDirection.X);
+}
+
+void ABlastCharacter::EquipButtonPressed()
+{
+	if (Combat && HasAuthority())
+	{
+		Combat->EquipWeapon(OverlappingWeapon);
+	}
+}
+
+void ABlastCharacter::OnRep_OverlappingWeapon(AWeapon* LastWeapon)
+{
+	if (OverlappingWeapon) OverlappingWeapon->ShowPickupWidget(true);
+
+	if (LastWeapon) LastWeapon->ShowPickupWidget(false);
+	
 }
 
 
