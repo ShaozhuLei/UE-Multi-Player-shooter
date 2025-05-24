@@ -19,10 +19,14 @@ public:
 	// Sets default values for this actor's properties
 	AWeapon();
 	virtual void Tick(float DeltaTime) override;
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 	void ShowPickupWidget(bool bShowWidget);
+	void SetWeaponState(EWeaponState State);
 
-	FORCEINLINE void SetWeaponState(EWeaponState State){WeaponState = State;}
+	FORCEINLINE USphereComponent* GetAreaSphere() const { return AreaSphere; }
+
+	FORCEINLINE USkeletalMeshComponent* GetWeaponMesh() const { return WeaponMesh; }
 
 protected:
 	// Called when the game starts or when spawned
@@ -46,18 +50,22 @@ protected:
 		int32 OtherBodyIndex);
 
 private:
-
 	UPROPERTY(EditDefaultsOnly, Category="Weapon properties")
 	TObjectPtr<USkeletalMeshComponent> WeaponMesh;
 
 	UPROPERTY(VisibleAnywhere, Category="Weapon properties")
 	TObjectPtr<USphereComponent> AreaSphere;
 
-	UPROPERTY(VisibleAnywhere, Category = "Weapon Properties")
+	UPROPERTY(ReplicatedUsing = OnRep_WeaponState, VisibleAnywhere, Category = "Weapon Properties")
 	EWeaponState WeaponState;
 
 	UPROPERTY(VisibleAnywhere, Category = "Weapon Properties")
 	TObjectPtr<UWidgetComponent> PickupWidget;
+
+	UFUNCTION()
+	void OnRep_WeaponState();
+
+	
 };
 
 

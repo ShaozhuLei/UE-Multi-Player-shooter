@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "EnumTypes.h"
 #include "InputMappingContext.h"
 #include "Components/WidgetComponent.h"
 #include "GameFramework/Character.h"
@@ -27,8 +28,18 @@ public:
 
 	void Move(const FInputActionValue& InputActionValue);
 	void Look(const FInputActionValue& InputActionValue);
+	void CrouchButtonPressed();
 	void EquipButtonPressed();
+	void AimButtonPressed(const FInputActionInstance& Instance);
+	void AimButtonReleased();
 	void SetOverlappingWeapon(AWeapon* InWeapon);
+	void AimOffset();
+	bool IsEquipped() const;
+	bool IsAiming();
+	AWeapon* GetEquippedWeapon();
+	FORCEINLINE float GetAO_Yaw() const { return AO_Yaw; }
+	FORCEINLINE float GetAO_Pitch() const { return AO_Pitch; }
+	FORCEINLINE ETurningInPlace GetTurningInPlace() const { return TurningInPlace; }
 
 	/*Movement*/
 	UPROPERTY(EditDefaultsOnly, Category="Input")
@@ -42,6 +53,12 @@ public:
 	
 	UPROPERTY(EditDefaultsOnly, Category="Input")
 	TObjectPtr<UInputAction> EPressed;
+
+	UPROPERTY(EditDefaultsOnly, Category="Input")
+	TObjectPtr<UInputAction> CrouchAction;
+
+	UPROPERTY(EditDefaultsOnly, Category="Input")
+	TObjectPtr<UInputAction> AimingAction;
 
 protected:
 	// Called when the game starts or when spawned
@@ -69,8 +86,40 @@ private:
 
 	UFUNCTION()
 	void OnRep_OverlappingWeapon(AWeapon* LastWeapon);
+
+	UFUNCTION(Server, Reliable)
+	void ServerEquipButtonPressed();
+
+	UFUNCTION(Server, Reliable)
+	void ServerSetUseControllerRotationYaw(bool InUse);
+
+	UFUNCTION(Server, Reliable)
+	void ServerSetAO_Yaw(float InYaw);
+	
+	UFUNCTION(Server, Reliable)
+	void ServerSetAO_Pitch(float InPitch);
+
+	UFUNCTION(Server, Reliable)
+	void ServerSetTurningPlace(ETurningInPlace InTurningInState);
+	
+	void TurnInPlace();
+
+	UPROPERTY(Replicated)
+	ETurningInPlace TurningInPlace;
+	
+	UPROPERTY(Replicated)
+	float AO_Yaw;
+
+	UPROPERTY(Replicated)
+	float AO_Pitch;
+	
+	float InterpAO_Yaw;
+	float CachedDeltaTime;
+	FRotator StartingAimRotation;
+	FRotator EndingAimRotation;
 	
 };
+
 
 
 

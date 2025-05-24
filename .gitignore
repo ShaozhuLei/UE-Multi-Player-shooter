@@ -21,3 +21,5 @@ Build
 *.suo
 *.xcodeproj
 *.xcworkspace
+*.umap
+*.uasset

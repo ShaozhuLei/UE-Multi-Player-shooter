@@ -7,12 +7,15 @@
 #include "Components/SphereComponent.h"
 #include "Components/WidgetComponent.h"
 #include "Net/UnrealNetwork.h"
+#include "EnumTypes.h"
+#include "BlasterComponents/CombatComponent.h"
 
 // Sets default values
 AWeapon::AWeapon()
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = false;
+	bReplicates = true;
 
 	WeaponMesh = CreateDefaultSubobject<USkeletalMeshComponent>("Weapon Mesh");
 	SetRootComponent(WeaponMesh);
@@ -76,10 +79,39 @@ void AWeapon::ShowPickupWidget(bool bShowWidget)
 	}
 }
 
+void AWeapon::SetWeaponState(EWeaponState State)
+{
+	WeaponState = State;
+	switch (WeaponState)
+	{
+		case EWeaponState::EWS_Equipped:
+			ShowPickupWidget(false);
+			AreaSphere->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+			break;
+	}
+}
+
+void AWeapon::OnRep_WeaponState()
+{
+	switch (WeaponState)
+	{
+	case EWeaponState::EWS_Equipped:
+		ShowPickupWidget(false);
+		break;
+	}
+}
+
 // Called every frame
 void AWeapon::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+}
+
+void AWeapon::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(AWeapon, WeaponState);
 }
 
