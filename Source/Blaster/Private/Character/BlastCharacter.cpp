@@ -62,7 +62,7 @@ void ABlastCharacter::BeginPlay()
 void ABlastCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-	CachedDeltaTime = DeltaTime;
+	AimOffset(DeltaTime);
 }
 
 void ABlastCharacter::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const
@@ -97,7 +97,7 @@ void ABlastCharacter::SetOverlappingWeapon(AWeapon* InWeapon)
 	}
 }
 
-void ABlastCharacter::AimOffset()
+void ABlastCharacter::AimOffset(float DeltaTime)
 {
 	if (Combat && Combat->EquippedWeapon == nullptr) return;
 	FVector Velocity = GetVelocity();
@@ -109,29 +109,19 @@ void ABlastCharacter::AimOffset()
 	{
 		FRotator CurrentAimRotation = FRotator(0.f, GetBaseAimRotation().Yaw, 0.f);
 		FRotator DeltaAimRotation = UKismetMathLibrary::NormalizedDeltaRotator(CurrentAimRotation, StartingAimRotation);
-		//FRotator DeltaAimRotation = UKismetMathLibrary::NormalizedDeltaRotator(CurrentAimRotation, UKismetMathLibrary::MakeRotFromX(GetActorForwardVector()));
 		AO_Yaw = DeltaAimRotation.Yaw;
-		ServerSetAO_Yaw(AO_Yaw);
-		
 		if (TurningInPlace == ETurningInPlace::ETIP_NotTurning) InterpAO_Yaw = AO_Yaw;
-		
 		bUseControllerRotationYaw = true;
-		ServerSetUseControllerRotationYaw(true);
-		
-		TurnInPlace();
+		TurnInPlace(DeltaTime);
 	}
 	if (Speed > 0.f || bIsInAir) // running, or jumping
 	{
 		StartingAimRotation = FRotator(0.f, GetBaseAimRotation().Yaw, 0.f);
 		AO_Yaw = 0.f;
-		
 		bUseControllerRotationYaw = true;
-		ServerSetUseControllerRotationYaw(true);
-		
 		TurningInPlace = ETurningInPlace::ETIP_NotTurning;
 	}
 	AO_Pitch = GetBaseAimRotation().Pitch;
-	ServerSetAO_Pitch(AO_Pitch);
 	
 	if (AO_Pitch > 90.f && !IsLocallyControlled())
 	{
@@ -139,7 +129,19 @@ void ABlastCharacter::AimOffset()
 		FVector2D InRange(270.f, 360.f);
 		FVector2D OutRange(-90.f, 0.f);
 		AO_Pitch = FMath::GetMappedRangeValueClamped(InRange, OutRange, AO_Pitch);
-		ServerSetAO_Pitch(AO_Pitch);
+	}
+}
+
+void ABlastCharacter::PlayFireMontage(bool bAiming)
+{
+	if (Combat == nullptr && Combat->EquippedWeapon == nullptr) return;
+
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	if (AnimInstance && FireWeaponMontage)
+	{
+		AnimInstance->Montage_Play(FireWeaponMontage);
+		FName SectionName = bAiming ? FName("RifleAim") : FName("RifleHip");
+		AnimInstance->Montage_JumpToSection(SectionName);
 	}
 }
 
@@ -199,11 +201,6 @@ void ABlastCharacter::ServerEquipButtonPressed_Implementation()
 	}
 }
 
-void ABlastCharacter::ServerSetUseControllerRotationYaw_Implementation(bool InUse)
-{
-	bUseControllerRotationYaw = InUse;
-}
-
 void ABlastCharacter::EquipButtonPressed()
 {
 	if (Combat)
@@ -222,23 +219,29 @@ void ABlastCharacter::EquipButtonPressed()
 void ABlastCharacter::AimButtonPressed(const FInputActionInstance& Instance)
 {
 	if (Combat) Combat->SetAiming(true);
-	if (IsEquipped())
-	{
-		AimOffset();
-		GetCharacterMovement()->bOrientRotationToMovement = false;
-	}
-	
 }
 
 void ABlastCharacter::AimButtonReleased()
 {
 	if (Combat) Combat->SetAiming(false);
-	
-	GetCharacterMovement()->bOrientRotationToMovement = true;
-	
-	bUseControllerRotationYaw = false;
-	ServerSetUseControllerRotationYaw(false);
 }
+
+void ABlastCharacter::FireButtonPressed()
+{
+	if (Combat)
+	{
+		Combat->FireButtonPressed(true);
+	}
+}
+
+void ABlastCharacter::FireButtonReleased()
+{
+	if (Combat)
+	{
+		Combat->FireButtonPressed(false);
+	}
+}
+
 
 void ABlastCharacter::OnRep_OverlappingWeapon(AWeapon* LastWeapon)
 {
@@ -248,43 +251,29 @@ void ABlastCharacter::OnRep_OverlappingWeapon(AWeapon* LastWeapon)
 	if (LastWeapon) LastWeapon->ShowPickupWidget(false);
 }
 
-void ABlastCharacter::ServerSetAO_Yaw_Implementation(float InYaw)
-{
-	AO_Yaw = InYaw;
-}
-
-void ABlastCharacter::ServerSetAO_Pitch_Implementation(float InPitch)
-{
-	AO_Pitch = InPitch;
-}
-
-
 void ABlastCharacter::ServerSetTurningPlace_Implementation(ETurningInPlace InTurningInState)
 {
 	TurningInPlace = InTurningInState;
 }
 
-void ABlastCharacter::TurnInPlace()
-{
-	if (AO_Yaw > 60.f)
+void ABlastCharacter::TurnInPlace(float DeltaTime)
+{	
+	if (AO_Yaw > 90.f)
 	{
 		TurningInPlace = ETurningInPlace::ETIP_Right;
-		ServerSetTurningPlace(ETurningInPlace::ETIP_Right);
 	}
-	else if (AO_Yaw < -60.f)
+	else if (AO_Yaw < -90.f)
 	{
 		TurningInPlace = ETurningInPlace::ETIP_Left;
-		ServerSetTurningPlace(ETurningInPlace::ETIP_Left);
 	}
+
 	if (TurningInPlace != ETurningInPlace::ETIP_NotTurning)
 	{
-		InterpAO_Yaw = FMath::FInterpTo(InterpAO_Yaw, 0.f, CachedDeltaTime, 4.f);
+		InterpAO_Yaw = FMath::FInterpTo(InterpAO_Yaw, 0.f, DeltaTime, 4.f);
 		AO_Yaw = InterpAO_Yaw;
-		
 		if (FMath::Abs(AO_Yaw) < 15.f)
 		{
 			TurningInPlace = ETurningInPlace::ETIP_NotTurning;
-			ServerSetTurningPlace(ETurningInPlace::ETIP_NotTurning);
 			StartingAimRotation = FRotator(0.f, GetBaseAimRotation().Yaw, 0.f);
 		}
 	}
@@ -304,6 +293,8 @@ void ABlastCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComp
 		EnhancedInputComponent->BindAction(CrouchAction, ETriggerEvent::Started, this, &ABlastCharacter::CrouchButtonPressed);
 		EnhancedInputComponent->BindAction(AimingAction, ETriggerEvent::Triggered, this, &ABlastCharacter::AimButtonPressed);
 		EnhancedInputComponent->BindAction(AimingAction, ETriggerEvent::Completed, this, &ABlastCharacter::AimButtonReleased);
+		EnhancedInputComponent->BindAction(FireAction, ETriggerEvent::Triggered, this, &ABlastCharacter::FireButtonPressed);
+		EnhancedInputComponent->BindAction(FireAction, ETriggerEvent::Completed, this, &ABlastCharacter::FireButtonReleased);
 	}
 }
 

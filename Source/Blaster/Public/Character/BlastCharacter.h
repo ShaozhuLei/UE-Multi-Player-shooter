@@ -32,8 +32,11 @@ public:
 	void EquipButtonPressed();
 	void AimButtonPressed(const FInputActionInstance& Instance);
 	void AimButtonReleased();
+	void FireButtonPressed();
+	void FireButtonReleased();
 	void SetOverlappingWeapon(AWeapon* InWeapon);
-	void AimOffset();
+	void AimOffset(float DeltaTime);
+	void PlayFireMontage(bool bAiming);
 	bool IsEquipped() const;
 	bool IsAiming();
 	AWeapon* GetEquippedWeapon();
@@ -60,11 +63,18 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category="Input")
 	TObjectPtr<UInputAction> AimingAction;
 
+	UPROPERTY(EditDefaultsOnly, Category="Input")
+	TObjectPtr<UInputAction> FireAction;
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
 private:
+
+	/** Montages*/
+	UPROPERTY(EditAnywhere, Category = Combat)
+	class UAnimMontage* FireWeaponMontage;
 	
 	UPROPERTY(VisibleAnywhere, Category="Camera")
 	class USpringArmComponent* CameraBoom;
@@ -89,20 +99,11 @@ private:
 
 	UFUNCTION(Server, Reliable)
 	void ServerEquipButtonPressed();
-
-	UFUNCTION(Server, Reliable)
-	void ServerSetUseControllerRotationYaw(bool InUse);
-
-	UFUNCTION(Server, Reliable)
-	void ServerSetAO_Yaw(float InYaw);
 	
-	UFUNCTION(Server, Reliable)
-	void ServerSetAO_Pitch(float InPitch);
-
 	UFUNCTION(Server, Reliable)
 	void ServerSetTurningPlace(ETurningInPlace InTurningInState);
 	
-	void TurnInPlace();
+	void TurnInPlace(float DeltaTime);
 
 	UPROPERTY(Replicated)
 	ETurningInPlace TurningInPlace;
@@ -114,9 +115,7 @@ private:
 	float AO_Pitch;
 	
 	float InterpAO_Yaw;
-	float CachedDeltaTime;
 	FRotator StartingAimRotation;
-	FRotator EndingAimRotation;
 	
 };
 

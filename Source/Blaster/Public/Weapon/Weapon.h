@@ -23,6 +23,7 @@ public:
 
 	void ShowPickupWidget(bool bShowWidget);
 	void SetWeaponState(EWeaponState State);
+	void Fire();
 
 	FORCEINLINE USphereComponent* GetAreaSphere() const { return AreaSphere; }
 
@@ -61,7 +62,10 @@ private:
 
 	UPROPERTY(VisibleAnywhere, Category = "Weapon Properties")
 	TObjectPtr<UWidgetComponent> PickupWidget;
-
+	
+	UPROPERTY(EditAnywhere, Category = "Weapon Properties")
+	UAnimationAsset* FireAnimation;
+	
 	UFUNCTION()
 	void OnRep_WeaponState();
 

@@ -9,6 +9,7 @@
 #include "Net/UnrealNetwork.h"
 #include "EnumTypes.h"
 #include "BlasterComponents/CombatComponent.h"
+#include "Kismet/GameplayStatics.h"
 
 // Sets default values
 AWeapon::AWeapon()
@@ -89,6 +90,11 @@ void AWeapon::SetWeaponState(EWeaponState State)
 			AreaSphere->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 			break;
 	}
+}
+
+void AWeapon::Fire()
+{	
+	if (FireAnimation) WeaponMesh->PlayAnimation(FireAnimation, false);
 }
 
 void AWeapon::OnRep_WeaponState()
