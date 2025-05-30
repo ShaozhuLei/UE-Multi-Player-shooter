@@ -5,8 +5,10 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
+#include "HUD/BlastHUD.h"
 #include "CombatComponent.generated.h"
 
+#define TRACE_LENGTH 80000.f;
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class BLASTER_API UCombatComponent : public UActorComponent
@@ -27,17 +29,44 @@ protected:
 	virtual void BeginPlay() override;
 
 	void SetAiming(bool bIsAiming);
+	void FireButtonPressed(bool bPressed);
+	void TraceUnderCrosshairs(FHitResult& HitResult);
+	void SetHUDCrosshair(float DeltaTime);
+	void Fire();
 
 	UFUNCTION(Server, Reliable)
 	void ServerSetAiming(bool bIsAiming);
 
 	UFUNCTION()
 	void OnRep_EquippedWeapon();
+	
+	UFUNCTION(Server, Reliable)
+	void ServerFire(const FVector_NetQuantize& TraceHitTarget);
 
-	void FireButtonPressed(bool bPressed);
+	UFUNCTION(NetMulticast, reliable)
+	void MulticastFire(const FVector_NetQuantize& TraceHitTarget);
+
+	
 
 private:
+
+	float CrosshairVelocityFactor;
+	float CrosshairInAirFactor;
+	float DefaultFOV;
+	float CurrentFOV;
+	float CrosshairAimFactor;
+	float CrosshairShootingFactor;
+	bool bFireButtonPressed;
+	FVector HitTarget;
+	FHUDPackage HUDPackage;
 	TObjectPtr<ABlastCharacter> Character;
+	class ABlasterPlayerController* Controller;
+	class ABlastHUD* HUD;
+	FTimerHandle FireTimer;
+	bool bCanFire = true;
+	
+	void StartFireTimer();
+	void FireTimerFinished();
 
 	UPROPERTY(ReplicatedUsing = OnRep_EquippedWeapon)
 	TObjectPtr<AWeapon> EquippedWeapon;
@@ -51,6 +80,13 @@ private:
 	UPROPERTY(EditAnywhere)
 	float AimWalkSpeed;
 
-	bool bFireButtonPressed;
-	
+	UPROPERTY(EditAnywhere, Category = Combat)
+	float ZoomedFOV = 30.f;
+
+	UPROPERTY(EditAnywhere, Category = Combat)
+	float ZoomInterpSpeed = 20.f;
+
+	void InterpFOV(float DeltaTime);
 };
+
+

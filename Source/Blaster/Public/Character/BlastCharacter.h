@@ -5,8 +5,10 @@
 #include "CoreMinimal.h"
 #include "EnumTypes.h"
 #include "InputMappingContext.h"
+#include "Camera/CameraComponent.h"
 #include "Components/WidgetComponent.h"
 #include "GameFramework/Character.h"
+#include "Interface/InteractWithCrosshairsInterface.h"
 #include "BlastCharacter.generated.h"
 
 class UCombatComponent;
@@ -14,7 +16,7 @@ class AWeapon;
 class UOverHeadWidget;
 
 UCLASS()
-class BLASTER_API ABlastCharacter : public ACharacter
+class BLASTER_API ABlastCharacter : public ACharacter, public IInteractWithCrosshairsInterface
 {
 	GENERATED_BODY()
 
@@ -25,6 +27,7 @@ public:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
 	virtual void PostInitializeComponents() override;
+	virtual void OnRep_ReplicatedMovement() override;
 
 	void Move(const FInputActionValue& InputActionValue);
 	void Look(const FInputActionValue& InputActionValue);
@@ -36,13 +39,18 @@ public:
 	void FireButtonReleased();
 	void SetOverlappingWeapon(AWeapon* InWeapon);
 	void AimOffset(float DeltaTime);
+	void TurnInPlace(float DeltaTime);
 	void PlayFireMontage(bool bAiming);
 	bool IsEquipped() const;
 	bool IsAiming();
+	
 	AWeapon* GetEquippedWeapon();
+	FVector GetHitTarget() const;
 	FORCEINLINE float GetAO_Yaw() const { return AO_Yaw; }
 	FORCEINLINE float GetAO_Pitch() const { return AO_Pitch; }
 	FORCEINLINE ETurningInPlace GetTurningInPlace() const { return TurningInPlace; }
+	FORCEINLINE UCameraComponent* GetFollowCamera() const { return FollowCamera; }
+	FORCEINLINE bool ShouldRotateRootBone() const { return bRotateRootBone; }
 
 	/*Movement*/
 	UPROPERTY(EditDefaultsOnly, Category="Input")
@@ -66,15 +74,39 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category="Input")
 	TObjectPtr<UInputAction> FireAction;
 
+	UFUNCTION(NetMulticast, Unreliable)
+	void MulticastHit();
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
+	void PlayHitReactMontage();
+	void CalculateAO_Pitch();
+	void SimProxiesTurn();
 
 private:
+
+	ETurningInPlace TurningInPlace;
+	float AO_Yaw;
+	float AO_Pitch;
+	float InterpAO_Yaw;
+	FRotator StartingAimRotation;
+	bool bRotateRootBone;
+	float TurnThreshold = 0.5f;
+	FRotator ProxyRotationLastFrame;
+	FRotator ProxyRotation;
+	float ProxyYaw;
+	float TimeSinceLastMovementReplication;
+	TObjectPtr<class ABlasterPlayerController> BlasterPlayerController;
+
+	float CalculateSpeed();
 
 	/** Montages*/
 	UPROPERTY(EditAnywhere, Category = Combat)
 	class UAnimMontage* FireWeaponMontage;
+
+	UPROPERTY(EditAnywhere, Category = Combat)
+	UAnimMontage* HitReactMontage;
 	
 	UPROPERTY(VisibleAnywhere, Category="Camera")
 	class USpringArmComponent* CameraBoom;
@@ -94,6 +126,15 @@ private:
 	UPROPERTY(ReplicatedUsing = OnRep_OverlappingWeapon)
 	TObjectPtr<AWeapon> OverlappingWeapon;
 
+	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess = "true"))
+	float MaxHealth = 100.f;
+
+	UPROPERTY(ReplicatedUsing = OnRep_Health, VisibleAnywhere, Category="Player State")
+	float Health = 100.f;
+	
+	UFUNCTION()
+	void OnRep_Health();
+	
 	UFUNCTION()
 	void OnRep_OverlappingWeapon(AWeapon* LastWeapon);
 
@@ -102,22 +143,16 @@ private:
 	
 	UFUNCTION(Server, Reliable)
 	void ServerSetTurningPlace(ETurningInPlace InTurningInState);
-	
-	void TurnInPlace(float DeltaTime);
 
-	UPROPERTY(Replicated)
-	ETurningInPlace TurningInPlace;
-	
-	UPROPERTY(Replicated)
-	float AO_Yaw;
+	void HideCameraIfCharacterClose();
 
-	UPROPERTY(Replicated)
-	float AO_Pitch;
-	
-	float InterpAO_Yaw;
-	FRotator StartingAimRotation;
-	
+	UPROPERTY(EditAnywhere)
+	float CameraThreshold = 200.f;
 };
+
+
+
+
 
 
 

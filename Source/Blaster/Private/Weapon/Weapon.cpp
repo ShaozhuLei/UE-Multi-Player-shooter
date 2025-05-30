@@ -9,7 +9,9 @@
 #include "Net/UnrealNetwork.h"
 #include "EnumTypes.h"
 #include "BlasterComponents/CombatComponent.h"
+#include "Engine/SkeletalMeshSocket.h"
 #include "Kismet/GameplayStatics.h"
+#include "Weapon/Casing.h"
 
 // Sets default values
 AWeapon::AWeapon()
@@ -92,9 +94,28 @@ void AWeapon::SetWeaponState(EWeaponState State)
 	}
 }
 
-void AWeapon::Fire()
+void AWeapon::Fire(const FVector& HitTarget)
 {	
 	if (FireAnimation) WeaponMesh->PlayAnimation(FireAnimation, false);
+
+	if (CasingSubclass)
+	{
+		const USkeletalMeshSocket* AmmoEjectSocket = WeaponMesh->GetSocketByName(FName("AmmoEject"));
+		if (AmmoEjectSocket)
+		{
+			const FTransform SocketTransform = AmmoEjectSocket->GetSocketTransform(WeaponMesh);
+			UWorld* World = GetWorld();
+			
+			if (World)
+			{
+				World->SpawnActor<ACasing>(
+					CasingSubclass,
+					SocketTransform.GetLocation(),
+					SocketTransform.GetRotation().Rotator()
+				);
+			}
+		}
+	}
 }
 
 void AWeapon::OnRep_WeaponState()
