@@ -14,6 +14,7 @@
 #include "Net/UnrealNetwork.h"
 #include "Weapon/Weapon.h"
 #include "Blaster/Blaster.h"
+#include "GameMode/BlasterGameMode.h"
 #include "PlayerController/BlasterPlayerController.h"
 
 // Sets default values
@@ -48,11 +49,6 @@ ABlastCharacter::ABlastCharacter()
 	TurningInPlace = ETurningInPlace::ETIP_NotTurning;
 }
 
-void ABlastCharacter::MulticastHit_Implementation()
-{
-	PlayHitReactMontage();
-}
-
 // Called when the game starts or when spawned
 void ABlastCharacter::BeginPlay()
 {
@@ -64,11 +60,11 @@ void ABlastCharacter::BeginPlay()
 			Subsystem->AddMappingContext(SlashMappingContext, 0);
 		}
 	}
-
-	BlasterPlayerController = Cast<ABlasterPlayerController>(Controller);
-	if (BlasterPlayerController)
+	
+	UpdateHUDHealth();
+	if (HasAuthority())
 	{
-		BlasterPlayerController->SetHUDHealth(Health, MaxHealth);
+		OnTakeAnyDamage.AddDynamic(this, &ABlastCharacter::ReceiveDamage);
 	}
 }
 
@@ -170,6 +166,15 @@ void ABlastCharacter::PlayFireMontage(bool bAiming)
 	}
 }
 
+void ABlastCharacter::PlayElimMontage()
+{
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	if (AnimInstance && ElimMontage)
+	{
+		AnimInstance->Montage_Play(ElimMontage);
+	}
+}
+
 void ABlastCharacter::PlayHitReactMontage()
 {
 	if (Combat == nullptr) return;
@@ -232,6 +237,25 @@ void ABlastCharacter::SimProxiesTurn()
 
 }
 
+void ABlastCharacter::ReceiveDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType,
+	class AController* InstigatorController, AActor* DamageCauser)
+{
+	Health = FMath::Clamp(Health - Damage, 0.0f, 100.f);
+	UpdateHUDHealth();
+	PlayHitReactMontage();
+
+	if (Health == 0)
+	{
+		ABlasterGameMode* BlasterGameMode = GetWorld()->GetAuthGameMode<ABlasterGameMode>();
+		if (BlasterGameMode)
+		{
+			BlasterPlayerController = BlasterPlayerController == nullptr ? Cast<ABlasterPlayerController>(Controller) : BlasterPlayerController;
+			ABlasterPlayerController* AttackerController = Cast<ABlasterPlayerController>(InstigatorController);
+			BlasterGameMode->PlayerEliminated(this, BlasterPlayerController, AttackerController);
+		}
+	}
+}
+
 bool ABlastCharacter::IsEquipped() const
 {
 	return Combat && Combat->EquippedWeapon;
@@ -240,6 +264,24 @@ bool ABlastCharacter::IsEquipped() const
 bool ABlastCharacter::IsAiming()
 {
 	return Combat && Combat->bAiming;
+}
+
+void ABlastCharacter::Elim()
+{
+	MultiCastElim();
+	GetWorldTimerManager().SetTimer(ElimTimer, this, &ABlastCharacter::ElimTimerFinished, ElimDelay);
+}
+
+void ABlastCharacter::MultiCastElim_Implementation()
+{
+	bElimmed = true;
+	PlayElimMontage();
+}
+
+void ABlastCharacter::ElimTimerFinished()
+{
+	ABlasterGameMode* BlasterGameMode = GetWorld()->GetAuthGameMode<ABlasterGameMode>();
+	if (BlasterGameMode) BlasterGameMode->RequestRespawn(this, Controller);
 }
 
 AWeapon* ABlastCharacter::GetEquippedWeapon()
@@ -332,7 +374,19 @@ void ABlastCharacter::FireButtonReleased()
 
 void ABlastCharacter::OnRep_Health()
 {
+	UpdateHUDHealth();
+	PlayHitReactMontage();
 }
+
+void ABlastCharacter::UpdateHUDHealth()
+{
+	BlasterPlayerController = BlasterPlayerController == nullptr? Cast<ABlasterPlayerController>(Controller): BlasterPlayerController;
+	if (BlasterPlayerController)
+	{
+		BlasterPlayerController->SetHUDHealth(Health, MaxHealth);
+	}
+}
+
 
 void ABlastCharacter::OnRep_OverlappingWeapon(AWeapon* LastWeapon)
 {
@@ -390,6 +444,7 @@ void ABlastCharacter::TurnInPlace(float DeltaTime)
 		}
 	}
 }
+
 
 float ABlastCharacter::CalculateSpeed()
 {

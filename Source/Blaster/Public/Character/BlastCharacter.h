@@ -41,8 +41,13 @@ public:
 	void AimOffset(float DeltaTime);
 	void TurnInPlace(float DeltaTime);
 	void PlayFireMontage(bool bAiming);
+	void PlayElimMontage();
 	bool IsEquipped() const;
 	bool IsAiming();
+	void Elim();
+
+	UFUNCTION(netmulticast, Reliable)
+	void MultiCastElim();
 	
 	AWeapon* GetEquippedWeapon();
 	FVector GetHitTarget() const;
@@ -51,6 +56,7 @@ public:
 	FORCEINLINE ETurningInPlace GetTurningInPlace() const { return TurningInPlace; }
 	FORCEINLINE UCameraComponent* GetFollowCamera() const { return FollowCamera; }
 	FORCEINLINE bool ShouldRotateRootBone() const { return bRotateRootBone; }
+	FORCEINLINE bool IsElimmed() const {return bElimmed;}
 
 	/*Movement*/
 	UPROPERTY(EditDefaultsOnly, Category="Input")
@@ -74,31 +80,40 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category="Input")
 	TObjectPtr<UInputAction> FireAction;
 
-	UFUNCTION(NetMulticast, Unreliable)
-	void MulticastHit();
-
 protected:
 	// Called when the game starts or when spawned
+	
+	
 	virtual void BeginPlay() override;
 	void PlayHitReactMontage();
 	void CalculateAO_Pitch();
 	void SimProxiesTurn();
+	void UpdateHUDHealth();
+
+	UPROPERTY(EditAnywhere, Category="Combat")
+	UAnimMontage* ElimMontage;
+	
+	UFUNCTION()
+	void ReceiveDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, class AController* InstigatorController, AActor* DamageCauser);
 
 private:
-
+	
 	ETurningInPlace TurningInPlace;
 	float AO_Yaw;
 	float AO_Pitch;
 	float InterpAO_Yaw;
-	FRotator StartingAimRotation;
-	bool bRotateRootBone;
-	float TurnThreshold = 0.5f;
-	FRotator ProxyRotationLastFrame;
-	FRotator ProxyRotation;
 	float ProxyYaw;
 	float TimeSinceLastMovementReplication;
-	TObjectPtr<class ABlasterPlayerController> BlasterPlayerController;
+	float TurnThreshold = 0.5f;
+	bool bRotateRootBone;
+	bool bElimmed = false;
+	FRotator StartingAimRotation;
+	FRotator ProxyRotationLastFrame;
+	FRotator ProxyRotation;
+	FTimerHandle ElimTimer;
+	class ABlasterPlayerController* BlasterPlayerController;
 
+	void ElimTimerFinished();
 	float CalculateSpeed();
 
 	/** Montages*/
@@ -128,6 +143,9 @@ private:
 
 	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess = "true"))
 	float MaxHealth = 100.f;
+
+	UPROPERTY(EditDefaultsOnly)
+	float ElimDelay = 3.f;
 
 	UPROPERTY(ReplicatedUsing = OnRep_Health, VisibleAnywhere, Category="Player State")
 	float Health = 100.f;

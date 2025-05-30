@@ -50,7 +50,7 @@ void ABlastHUD::DrawHUD()
 void ABlastHUD::BeginPlay()
 {
 	Super::BeginPlay();
-	
+	AddCharacterOverlay();
 }
 
 void ABlastHUD::AddCharacterOverlay()
