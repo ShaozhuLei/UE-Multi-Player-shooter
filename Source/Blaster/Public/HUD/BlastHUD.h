@@ -6,6 +6,7 @@
 #include "GameFramework/HUD.h"
 #include "BlastHUD.generated.h"
 
+class UAnnouncement;
 class UCharacterOverlay;
 /**
  * 
@@ -36,13 +37,23 @@ public:
 
 	UPROPERTY(EditAnywhere, Category="Player State")
 	TSubclassOf<UCharacterOverlay> CharacterOverlayClass;
-	
+
+	UPROPERTY(EditAnywhere, Category = "Announcements")
+	TSubclassOf<UUserWidget> AnnouncementClass;
+
+	UPROPERTY()
 	class UCharacterOverlay* CharacterOverlay;
+
+	UPROPERTY()
+	TObjectPtr<UAnnouncement> Announcement;
+	
+	void AddCharacterOverlay();
+	void AddAnnouncement();
 
 protected:
 
 	virtual void BeginPlay() override;
-	void AddCharacterOverlay();
+	
 	
 private:
 	FHUDPackage HUDPackage;

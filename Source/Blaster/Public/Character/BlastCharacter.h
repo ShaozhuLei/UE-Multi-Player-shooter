@@ -37,26 +37,34 @@ public:
 	void AimButtonReleased();
 	void FireButtonPressed();
 	void FireButtonReleased();
+	void ReloadButtonPressed();
 	void SetOverlappingWeapon(AWeapon* InWeapon);
 	void AimOffset(float DeltaTime);
 	void TurnInPlace(float DeltaTime);
 	void PlayFireMontage(bool bAiming);
 	void PlayElimMontage();
+	void PlayReloadMontage();
+	void PollInt();
 	bool IsEquipped() const;
 	bool IsAiming();
 	void Elim();
 
-	UFUNCTION(netmulticast, Reliable)
+	UFUNCTION(Netmulticast, Reliable)
 	void MultiCastElim();
 	
 	AWeapon* GetEquippedWeapon();
 	FVector GetHitTarget() const;
+	ECombatState GetCombatState() const;
 	FORCEINLINE float GetAO_Yaw() const { return AO_Yaw; }
 	FORCEINLINE float GetAO_Pitch() const { return AO_Pitch; }
 	FORCEINLINE ETurningInPlace GetTurningInPlace() const { return TurningInPlace; }
 	FORCEINLINE UCameraComponent* GetFollowCamera() const { return FollowCamera; }
 	FORCEINLINE bool ShouldRotateRootBone() const { return bRotateRootBone; }
 	FORCEINLINE bool IsElimmed() const {return bElimmed;}
+	FORCEINLINE float GetHealth() const { return Health; }
+	FORCEINLINE float GetMaxHealth() const { return MaxHealth; }
+	FORCEINLINE UCombatComponent* GetCombat() const { return Combat; }
+	FORCEINLINE bool GetDisableGameplay() const { return bDisableGameplay; }
 
 	/*Movement*/
 	UPROPERTY(EditDefaultsOnly, Category="Input")
@@ -80,15 +88,24 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category="Input")
 	TObjectPtr<UInputAction> FireAction;
 
+	UPROPERTY(EditDefaultsOnly, Category="Input")
+	TObjectPtr<UInputAction> ReloadAction;
+
+	UPROPERTY(Replicated)
+	bool bDisableGameplay = false;
+
 protected:
 	// Called when the game starts or when spawned
 	
 	
 	virtual void BeginPlay() override;
+	virtual void Destroyed() override;
 	void PlayHitReactMontage();
 	void CalculateAO_Pitch();
 	void SimProxiesTurn();
 	void UpdateHUDHealth();
+	void RotateInPlace(float DeltaTime);
+	
 
 	UPROPERTY(EditAnywhere, Category="Combat")
 	UAnimMontage* ElimMontage;
@@ -111,7 +128,12 @@ private:
 	FRotator ProxyRotationLastFrame;
 	FRotator ProxyRotation;
 	FTimerHandle ElimTimer;
+
+	UPROPERTY()
 	class ABlasterPlayerController* BlasterPlayerController;
+
+	UPROPERTY()
+	class ABlasterPlayerState* BlasterPlayerState;
 
 	void ElimTimerFinished();
 	float CalculateSpeed();
@@ -119,6 +141,9 @@ private:
 	/** Montages*/
 	UPROPERTY(EditAnywhere, Category = Combat)
 	class UAnimMontage* FireWeaponMontage;
+
+	UPROPERTY(EditDefaultsOnly, Category = Combat)
+	UAnimMontage* ReloadMontage;
 
 	UPROPERTY(EditAnywhere, Category = Combat)
 	UAnimMontage* HitReactMontage;
@@ -135,7 +160,7 @@ private:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UWidgetComponent> OverHeadWidget;
 
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UCombatComponent> Combat;
 
 	UPROPERTY(ReplicatedUsing = OnRep_OverlappingWeapon)

@@ -21,15 +21,24 @@ public:
 	AWeapon();
 	virtual void Tick(float DeltaTime) override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
-
+	virtual void OnRep_Owner() override;
+	virtual void Fire(const FVector& HitTarget);
+	
 	void ShowPickupWidget(bool bShowWidget);
 	void SetWeaponState(EWeaponState State);
-	virtual void Fire(const FVector& HitTarget);
+	void Dropped();
+	void AddAmmo(int32 AmmoToAdd);
+	void SetHUDAmmo();
+	bool bIsEmpty() const;
+	
 
 	FORCEINLINE USphereComponent* GetAreaSphere() const { return AreaSphere; }
 	FORCEINLINE USkeletalMeshComponent* GetWeaponMesh() const { return WeaponMesh; }
 	FORCEINLINE float GetZoomedFOV(){return ZoomedFOV;}
 	FORCEINLINE float GetZoomedInterfSpeed(){return ZoomInterpSpeed;}
+	FORCEINLINE EWeaponType GetWeaponType(){return WeaponType;}
+	FORCEINLINE int32 GetAmmo(){return Ammo;}
+	FORCEINLINE int32 GetMagCapacity(){return MagCapacity;}
 
 	/**
 	* Textures for the weapon crosshairs
@@ -55,6 +64,9 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category= "Combat")
 	bool bAutomatic = true;
 
+	UPROPERTY(EditAnywhere)
+	class USoundBase* EquipSound;
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -77,6 +89,9 @@ protected:
 		int32 OtherBodyIndex);
 
 private:
+
+	UFUNCTION()
+	void SpendRound();
 	
 	UPROPERTY(EditDefaultsOnly, Category="Weapon properties")
 	TObjectPtr<USkeletalMeshComponent> WeaponMesh;
@@ -96,6 +111,21 @@ private:
 	UPROPERTY(EditDefaultsOnly)
 	TSubclassOf<ACasing> CasingSubclass;
 
+	UPROPERTY(EditAnywhere, ReplicatedUsing = OnRep_Ammo)
+	int32 Ammo;
+
+	UPROPERTY(EditDefaultsOnly, Category="Weapon Properties")
+	EWeaponType WeaponType;
+	
+	UPROPERTY()
+	class ABlastCharacter* BlasterOwnerCharacter;
+	
+	UPROPERTY()
+	class ABlasterPlayerController* BlasterOwnerController;
+
+	UPROPERTY(EditAnywhere)
+	int32 MagCapacity;
+
 	/** 
 	* Zoomed FOV while aiming
 	*/
@@ -108,6 +138,9 @@ private:
 	
 	UFUNCTION()
 	void OnRep_WeaponState();
+
+	UFUNCTION()
+	void OnRep_Ammo();
 };
 
 

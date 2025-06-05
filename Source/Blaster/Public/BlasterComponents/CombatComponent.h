@@ -4,6 +4,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "EnumTypes.h"
 #include "Components/ActorComponent.h"
 #include "HUD/BlastHUD.h"
 #include "CombatComponent.generated.h"
@@ -23,16 +24,21 @@ public:
 	friend class ABlastCharacter;
 
 	void EquipWeapon(class AWeapon* WeaponToEquip);
+	void FireButtonPressed(bool bPressed);
+	int32 AmountToReload();
+
+	UFUNCTION(BlueprintCallable)
+	void FinishReloading();
 
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
-
 	void SetAiming(bool bIsAiming);
-	void FireButtonPressed(bool bPressed);
 	void TraceUnderCrosshairs(FHitResult& HitResult);
 	void SetHUDCrosshair(float DeltaTime);
 	void Fire();
+	void Reload();
+	void HandleReload();
 
 	UFUNCTION(Server, Reliable)
 	void ServerSetAiming(bool bIsAiming);
@@ -46,7 +52,8 @@ protected:
 	UFUNCTION(NetMulticast, reliable)
 	void MulticastFire(const FVector_NetQuantize& TraceHitTarget);
 
-	
+	UFUNCTION(Server, Reliable)
+	void ServerReload();
 
 private:
 
@@ -59,14 +66,23 @@ private:
 	bool bFireButtonPressed;
 	FVector HitTarget;
 	FHUDPackage HUDPackage;
-	TObjectPtr<ABlastCharacter> Character;
-	class ABlasterPlayerController* Controller;
-	class ABlastHUD* HUD;
 	FTimerHandle FireTimer;
 	bool bCanFire = true;
+	TMap<EWeaponType, int32> CarriedAmmoMap;
 	
 	void StartFireTimer();
 	void FireTimerFinished();
+	void UpdateAmmoValues();
+	bool CanFire();
+
+	UPROPERTY()
+	TObjectPtr<ABlastCharacter> Character;
+	
+	UPROPERTY()
+	class ABlasterPlayerController* Controller;
+	
+	UPROPERTY()
+	class ABlastHUD* HUD;
 
 	UPROPERTY(ReplicatedUsing = OnRep_EquippedWeapon)
 	TObjectPtr<AWeapon> EquippedWeapon;
@@ -86,7 +102,24 @@ private:
 	UPROPERTY(EditAnywhere, Category = Combat)
 	float ZoomInterpSpeed = 20.f;
 
+	UPROPERTY(ReplicatedUsing = OnRep_CarriedAmmo)
+	int32 CarriedAmmo;
+
+	UPROPERTY(ReplicatedUsing=Onrep_CombatState)
+	ECombatState CombatState = ECombatState::ECS_Unoccupied;
+
+	UFUNCTION()
+	void OnRep_CarriedAmmo();
+
+	UFUNCTION()
+	void OnRep_CombatState();
+
 	void InterpFOV(float DeltaTime);
+
+	UPROPERTY(EditDefaultsOnly)
+	int32 StartingARAmmo = 30;
+	
+	void InitializeCarriedAmmo();
 };
 
 

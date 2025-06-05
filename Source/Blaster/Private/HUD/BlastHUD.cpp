@@ -4,7 +4,33 @@
 #include "HUD/BlastHUD.h"
 
 #include "Blueprint/UserWidget.h"
+#include "HUD/Announcement.h"
 #include "HUD/CharacterOverlay.h"
+
+void ABlastHUD::BeginPlay()
+{
+	Super::BeginPlay();
+}
+
+void ABlastHUD::AddCharacterOverlay()
+{
+	APlayerController* PlayerController = GetOwningPlayerController();
+	if (PlayerController && CharacterOverlayClass)
+	{
+		CharacterOverlay = CreateWidget<UCharacterOverlay>(PlayerController, CharacterOverlayClass);
+		CharacterOverlay->AddToViewport();
+	}
+}
+
+void ABlastHUD::AddAnnouncement()
+{
+	APlayerController* PlayerController = GetOwningPlayerController();
+	if (PlayerController && AnnouncementClass)
+	{
+		Announcement = CreateWidget<UAnnouncement>(PlayerController, AnnouncementClass);
+		Announcement->AddToViewport();
+	}
+}
 
 void ABlastHUD::DrawHUD()
 {
@@ -43,23 +69,6 @@ void ABlastHUD::DrawHUD()
 			FVector2D Spread(0.f, SpreadScaled);
 			DrawCrosshair(HUDPackage.CrosshairsBottom, ViewportCenter, Spread, HUDPackage.CrosshairColor);
 		}
-	}
-	
-}
-
-void ABlastHUD::BeginPlay()
-{
-	Super::BeginPlay();
-	AddCharacterOverlay();
-}
-
-void ABlastHUD::AddCharacterOverlay()
-{
-	APlayerController* PlayerController = GetOwningPlayerController();
-	if (PlayerController && CharacterOverlayClass)
-	{
-		CharacterOverlay = CreateWidget<UCharacterOverlay>(PlayerController, CharacterOverlayClass);
-		CharacterOverlay->AddToViewport();
 	}
 	
 }
