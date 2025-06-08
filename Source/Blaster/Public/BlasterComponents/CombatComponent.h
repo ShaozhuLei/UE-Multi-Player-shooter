@@ -9,7 +9,6 @@
 #include "HUD/BlastHUD.h"
 #include "CombatComponent.generated.h"
 
-#define TRACE_LENGTH 80000.f;
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class BLASTER_API UCombatComponent : public UActorComponent
@@ -102,6 +101,9 @@ private:
 	UPROPERTY(EditAnywhere, Category = Combat)
 	float ZoomInterpSpeed = 20.f;
 
+	UPROPERTY(EditAnywhere)
+	int32 StartingShotgunAmmo = 0;
+
 	UPROPERTY(ReplicatedUsing = OnRep_CarriedAmmo)
 	int32 CarriedAmmo;
 
@@ -118,6 +120,18 @@ private:
 
 	UPROPERTY(EditDefaultsOnly)
 	int32 StartingARAmmo = 30;
+
+	UPROPERTY(EditAnywhere)
+	int32 StartingRocketAmmo = 0;
+
+	UPROPERTY(EditAnywhere)
+	int32 StartingPistolAmmo = 0;
+
+	UPROPERTY(EditAnywhere)
+	int32 StartingSMGAmmo = 0;
+
+	UPROPERTY(EditAnywhere)
+	int32 StartingSniperRifleAmmo = 4;
 	
 	void InitializeCarriedAmmo();
 };

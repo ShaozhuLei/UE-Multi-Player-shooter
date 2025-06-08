@@ -298,12 +298,23 @@ void ABlastCharacter::MultiCastElim_Implementation()
 
 	//被击杀后 停用移动和输入
 	bDisableGameplay = true;
+	GetCharacterMovement()->DisableMovement();
 
 	if (Combat) Combat->FireButtonPressed(false);
 	
 	//停用碰撞
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+	bool bHideSniperScope = IsLocallyControlled() &&
+		Combat && 
+		Combat->bAiming && 
+		Combat->EquippedWeapon && 
+		Combat->EquippedWeapon->GetWeaponType() == EWeaponType::EWT_SniperRifle;
+	if (bHideSniperScope)
+	{
+		ShowSniperScopeWidget(false);
+	}
 }
 
 void ABlastCharacter::ElimTimerFinished()
@@ -466,6 +477,26 @@ void ABlastCharacter::PlayReloadMontage()
 		case EWeaponType::EWT_AssaultRifle:
 			SectionName = FName("Rifle");
 			break;
+
+		case EWeaponType::EWT_RocketLauncher:
+			SectionName = FName("Rifle");
+			break;
+
+		case EWeaponType::EWT_Pistol:
+			SectionName = FName("Rifle");
+			break;
+
+		case EWeaponType::EWT_SubmachineGun:
+			SectionName = FName("Rifle");
+			break;
+
+		case EWeaponType::EWT_Shotgun:
+			SectionName = FName("Rifle");
+			break;
+
+		case EWeaponType::EWT_SniperRifle:
+			SectionName = FName("Rifle");
+			break;	
 		}
 		AnimInstance->Montage_JumpToSection(SectionName);
 	}
@@ -551,6 +582,11 @@ ECombatState ABlastCharacter::GetCombatState() const
 	return Combat->CombatState;
 }
 
+void ABlastCharacter::SetScopeState(bool ScopeState)
+{
+	bSniperScopeOn = ScopeState;
+}
+
 // Called to bind functionality to input
 void ABlastCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
@@ -563,7 +599,7 @@ void ABlastCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComp
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Started, this, &ACharacter::Jump);
 		EnhancedInputComponent->BindAction(EPressed, ETriggerEvent::Started, this, &ABlastCharacter::EquipButtonPressed);
 		EnhancedInputComponent->BindAction(CrouchAction, ETriggerEvent::Started, this, &ABlastCharacter::CrouchButtonPressed);
-		EnhancedInputComponent->BindAction(AimingAction, ETriggerEvent::Triggered, this, &ABlastCharacter::AimButtonPressed);
+		EnhancedInputComponent->BindAction(AimingAction, ETriggerEvent::Started, this, &ABlastCharacter::AimButtonPressed);
 		EnhancedInputComponent->BindAction(AimingAction, ETriggerEvent::Completed, this, &ABlastCharacter::AimButtonReleased);
 		EnhancedInputComponent->BindAction(FireAction, ETriggerEvent::Started, this, &ABlastCharacter::FireButtonPressed);
 		EnhancedInputComponent->BindAction(FireAction, ETriggerEvent::Completed, this, &ABlastCharacter::FireButtonReleased);

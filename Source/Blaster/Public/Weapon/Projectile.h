@@ -20,20 +20,27 @@ public:
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
+
+	UPROPERTY(VisibleAnywhere)
+	class UProjectileMovementComponent* ProjectileMovementComponent;
+	
+	UPROPERTY(VisibleAnywhere)
+	TObjectPtr<class UBoxComponent> CollisionBox;
+	
+	UPROPERTY(EditAnywhere)
+	UParticleSystem* ImpactParticle;
+
+	UPROPERTY(EditDefaultsOnly)
+	class USoundBase* ImpactSound;
 	
 	UPROPERTY(EditDefaultsOnly, Category="Projectile Property")
 	float Damage;
 	
 	UFUNCTION()
 	virtual void OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
-
 private:
-
-	UPROPERTY(VisibleAnywhere)
-	TObjectPtr<class UBoxComponent> CollisionBox;
-
-	UPROPERTY(VisibleAnywhere)
-	class UProjectileMovementComponent* ProjectileMovementComponent;
+	
+	
 
 	UPROPERTY(EditDefaultsOnly)
 	class UParticleSystem* Tracer;
@@ -41,10 +48,6 @@ private:
 	UPROPERTY()
 	class UParticleSystemComponent* TracerComponent;
 
-	UPROPERTY(EditAnywhere)
-	UParticleSystem* ImpactParticle;
-
-	UPROPERTY(EditDefaultsOnly)
-	class USoundBase* ImpactSound;
+	
 	
 };

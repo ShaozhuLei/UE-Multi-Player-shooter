@@ -240,11 +240,15 @@ void ABlasterPlayerController::SetHUDMatchCountdown(float Countdown)
 {
 	BlasterHUD = BlasterHUD == nullptr? Cast<ABlastHUD>(GetHUD()) : BlasterHUD;
 	
-	if (BlasterHUD && BlasterHUD->CharacterOverlay && BlasterHUD->CharacterOverlay->MatchCountdownText)
+	bool bHUDValid = BlasterHUD &&
+		BlasterHUD->CharacterOverlay &&
+		BlasterHUD->CharacterOverlay->MatchCountdownText;
+	
+	if (bHUDValid)
 	{
 		if (Countdown < 0.f)
 		{
-			BlasterHUD->Announcement->WarmupTime->SetText(FText());
+			BlasterHUD->CharacterOverlay->MatchCountdownText->SetText(FText());
 			return;
 		}
 		int32 Minutes = FMath::FloorToInt(Countdown/60.f);
@@ -287,7 +291,7 @@ void ABlasterPlayerController::HandleMatchHasStarted()
 	BlasterHUD = BlasterHUD == nullptr? Cast<ABlastHUD>(GetHUD()): BlasterHUD;
 	if (BlasterHUD)
 	{
-		BlasterHUD->AddCharacterOverlay();
+		if (BlasterHUD->CharacterOverlay == nullptr) BlasterHUD->AddCharacterOverlay();
 		if (BlasterHUD->Announcement)
 		{
 			BlasterHUD->Announcement->SetVisibility(ESlateVisibility::Hidden);
