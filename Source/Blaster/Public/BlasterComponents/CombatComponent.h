@@ -145,6 +145,9 @@ private:
 	UFUNCTION()
 	void OnRep_CombatState();
 
+	UFUNCTION()
+	void OnRep_Grenades();
+
 	void InterpFOV(float DeltaTime);
 
 	UPROPERTY(EditDefaultsOnly)
@@ -164,9 +167,16 @@ private:
 
 	UPROPERTY(EditAnywhere)
 	int32 StartingGrenadeLaucher = 4;
+
+	UPROPERTY(ReplicatedUsing = OnRep_Grenades)
+	int32 Grenades = 4;
+
+	UPROPERTY(EditAnywhere)
+	int32 MaxGrenades = 4;
 	
 	void InitializeCarriedAmmo();
 	void UpdateShotgunAmmoValues();
+	void UpdateHUDGrenades();
 };
 
 
