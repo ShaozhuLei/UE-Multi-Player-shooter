@@ -29,6 +29,20 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void FinishReloading();
 
+	UFUNCTION(BlueprintCallable)
+	void ShotgunShellReload();
+	
+	void JumpToShotgunEnd();
+
+	UFUNCTION(BlueprintCallable)
+	void ThrowGrenadeFinished();
+	
+	UFUNCTION(BlueprintCallable)
+	void LaunchGrenade();
+
+	UFUNCTION(Server, Reliable)
+	void ServerLaunchGrenade(const FVector_NetQuantize& Target);
+
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
@@ -38,6 +52,13 @@ protected:
 	void Fire();
 	void Reload();
 	void HandleReload();
+	void DropEquippedWeapon();
+	void AttachActorToRightHand(AActor* ActorToAttach);
+	void AttachActorToLeftHand(AActor* ActorToAttach);
+	void UpdateCarriedAmmo();
+	void PlayEquipWeaponSound();
+	void ReloadEmptyWeapon();
+	void ShowAttachedGrenade(bool bShowGrenade);
 
 	UFUNCTION(Server, Reliable)
 	void ServerSetAiming(bool bIsAiming);
@@ -53,6 +74,14 @@ protected:
 
 	UFUNCTION(Server, Reliable)
 	void ServerReload();
+
+	void ThrowGrenade();
+
+	UFUNCTION(Server, Reliable)
+	void ServerThrowGrenade();
+
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<class AProjectile> GrenadeClass;
 
 private:
 
@@ -137,6 +166,7 @@ private:
 	int32 StartingGrenadeLaucher = 4;
 	
 	void InitializeCarriedAmmo();
+	void UpdateShotgunAmmoValues();
 };
 
 

@@ -38,6 +38,7 @@ public:
 	void FireButtonPressed();
 	void FireButtonReleased();
 	void ReloadButtonPressed();
+	void GrenadeButtonPressed();
 	void SetOverlappingWeapon(AWeapon* InWeapon);
 	void AimOffset(float DeltaTime);
 	void TurnInPlace(float DeltaTime);
@@ -48,6 +49,7 @@ public:
 	bool IsEquipped() const;
 	bool IsAiming();
 	void Elim();
+	void PlayThrowGrenadeMontage();
 
 	UFUNCTION(Netmulticast, Reliable)
 	void MultiCastElim();
@@ -65,6 +67,8 @@ public:
 	FORCEINLINE float GetMaxHealth() const { return MaxHealth; }
 	FORCEINLINE UCombatComponent* GetCombat() const { return Combat; }
 	FORCEINLINE bool GetDisableGameplay() const { return bDisableGameplay; }
+	FORCEINLINE UAnimMontage* GetReloadMontage() const { return ReloadMontage; }
+	FORCEINLINE UStaticMeshComponent* GetAttachedGrenade() const { return AttachedGrenade; }
 	
 
 	/*Movement*/
@@ -88,6 +92,9 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, Category="Input")
 	TObjectPtr<UInputAction> FireAction;
+
+	UPROPERTY(EditDefaultsOnly, Category="Input")
+	TObjectPtr<UInputAction> GrenadeAction;
 
 	UPROPERTY(EditDefaultsOnly, Category="Input")
 	TObjectPtr<UInputAction> ReloadAction;
@@ -154,6 +161,9 @@ private:
 
 	UPROPERTY(EditAnywhere, Category = Combat)
 	UAnimMontage* HitReactMontage;
+
+	UPROPERTY(EditDefaultsOnly, Category = Combat)
+	UAnimMontage* ThrowGrenadeMontage;
 	
 	UPROPERTY(VisibleAnywhere, Category="Camera")
 	class USpringArmComponent* CameraBoom;
@@ -201,6 +211,9 @@ private:
 
 	UPROPERTY(BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
 	bool bSniperScopeOn = false;
+
+	UPROPERTY(VisibleAnywhere)
+	TObjectPtr<UStaticMeshComponent> AttachedGrenade ;
 };
 
 

@@ -48,6 +48,10 @@ ABlastCharacter::ABlastCharacter()
 	GetMesh()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera, ECollisionResponse::ECR_Ignore);
 	GetMesh()->SetCollisionResponseToChannel(ECC_Visibility, ECR_Block);
 
+	AttachedGrenade = CreateDefaultSubobject<UStaticMeshComponent>("Grenade Mesh");
+	AttachedGrenade->SetupAttachment(GetMesh(), "GrenadeSocket");
+	AttachedGrenade->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	
 	TurningInPlace = ETurningInPlace::ETIP_NotTurning;
 }
 
@@ -68,6 +72,11 @@ void ABlastCharacter::BeginPlay()
 	if (HasAuthority())
 	{
 		OnTakeAnyDamage.AddDynamic(this, &ABlastCharacter::ReceiveDamage);
+	}
+
+	if (AttachedGrenade)
+	{
+		AttachedGrenade->SetVisibility(false);
 	}
 }
 
@@ -289,6 +298,15 @@ void ABlastCharacter::Elim()
 	GetWorldTimerManager().SetTimer(ElimTimer, this, &ABlastCharacter::ElimTimerFinished, ElimDelay);
 }
 
+void ABlastCharacter::PlayThrowGrenadeMontage()
+{
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	if (AnimInstance)
+	{
+		AnimInstance->Montage_Play(ThrowGrenadeMontage);
+	}
+}
+
 void ABlastCharacter::MultiCastElim_Implementation()
 {
 	if (BlasterPlayerController) BlasterPlayerController->SetHUDWeaponAmmo(0);
@@ -423,6 +441,11 @@ void ABlastCharacter::ReloadButtonPressed()
 	if (Combat) Combat->Reload();
 }
 
+void ABlastCharacter::GrenadeButtonPressed()
+{
+	if (Combat) Combat->ThrowGrenade();
+}
+
 
 void ABlastCharacter::OnRep_Health()
 {
@@ -483,7 +506,7 @@ void ABlastCharacter::PlayReloadMontage()
 			break;
 
 		case EWeaponType::EWT_Pistol:
-			SectionName = FName("Rifle");
+			SectionName = FName("Pistol");
 			break;
 
 		case EWeaponType::EWT_SubmachineGun:
@@ -491,7 +514,7 @@ void ABlastCharacter::PlayReloadMontage()
 			break;
 
 		case EWeaponType::EWT_Shotgun:
-			SectionName = FName("Rifle");
+			SectionName = FName("Shotgun");
 			break;
 
 		case EWeaponType::EWT_SniperRifle:
@@ -608,6 +631,7 @@ void ABlastCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComp
 		EnhancedInputComponent->BindAction(FireAction, ETriggerEvent::Started, this, &ABlastCharacter::FireButtonPressed);
 		EnhancedInputComponent->BindAction(FireAction, ETriggerEvent::Completed, this, &ABlastCharacter::FireButtonReleased);
 		EnhancedInputComponent->BindAction(ReloadAction, ETriggerEvent::Started, this, &ABlastCharacter::ReloadButtonPressed);
+		EnhancedInputComponent->BindAction(GrenadeAction, ETriggerEvent::Started, this, &ABlastCharacter::GrenadeButtonPressed);
 	}
 }
 

@@ -29,6 +29,10 @@ AWeapon::AWeapon()
 	WeaponMesh->SetCollisionResponseToChannel(ECC_Pawn, ECR_Ignore);
 	WeaponMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
+	EnableCustomDepth(true);
+	WeaponMesh->SetCustomDepthStencilValue(CUSTOM_DEPTH_BLUE);
+	WeaponMesh->MarkRenderStateDirty();
+
 	AreaSphere = CreateDefaultSubobject<USphereComponent>(TEXT("AreaSphere"));
 	AreaSphere->SetupAttachment(RootComponent);
 	AreaSphere->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
@@ -117,6 +121,13 @@ void AWeapon::SetWeaponState(EWeaponState State)
 		    WeaponMesh->SetSimulatePhysics(false);
 		    WeaponMesh->SetEnableGravity(false);
 		    WeaponMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+			if (WeaponType == EWeaponType::EWT_SubmachineGun)
+			{
+				WeaponMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+				WeaponMesh->SetEnableGravity(true);
+				WeaponMesh->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
+			}
+			EnableCustomDepth(false);
 			break;
 
 		case EWeaponState::EWS_Dropped:
@@ -124,6 +135,9 @@ void AWeapon::SetWeaponState(EWeaponState State)
 			WeaponMesh->SetSimulatePhysics(true);
 			WeaponMesh->SetEnableGravity(true);
 			WeaponMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+			WeaponMesh->SetCustomDepthStencilValue(CUSTOM_DEPTH_BLUE);
+			WeaponMesh->MarkRenderStateDirty();
+			EnableCustomDepth(true);
 			break;
 		
 	}
@@ -182,6 +196,7 @@ void AWeapon::Fire(const FVector& HitTarget)
 void AWeapon::OnRep_Ammo()
 {
 	BlasterOwnerCharacter = BlasterOwnerCharacter == nullptr ? Cast<ABlastCharacter>(GetOwner()) : BlasterOwnerCharacter;
+	if (BlasterOwnerCharacter && BlasterOwnerCharacter->GetCombat() && IsFull()) BlasterOwnerCharacter->GetCombat()->JumpToShotgunEnd();
 	SetHUDAmmo();
 }
 
@@ -192,9 +207,20 @@ void AWeapon::SpendRound()
 	SetHUDAmmo();
 }
 
-bool AWeapon::bIsEmpty() const
+void AWeapon::EnableCustomDepth(bool bEnable)
+{
+	if (WeaponMesh) WeaponMesh->SetRenderCustomDepth(bEnable);
+	
+}
+
+bool AWeapon::IsEmpty() const
 {
 	return Ammo <= 0;
+}
+
+bool AWeapon::IsFull() const
+{
+	return Ammo == MagCapacity;
 }
 
 void AWeapon::OnRep_WeaponState()

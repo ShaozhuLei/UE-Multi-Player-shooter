@@ -29,7 +29,8 @@ public:
 	void Dropped();
 	void AddAmmo(int32 AmmoToAdd);
 	void SetHUDAmmo();
-	bool bIsEmpty() const;
+	bool IsEmpty() const;
+	bool IsFull() const;
 	
 
 	FORCEINLINE USphereComponent* GetAreaSphere() const { return AreaSphere; }
@@ -92,6 +93,8 @@ private:
 
 	UFUNCTION()
 	void SpendRound();
+
+	void EnableCustomDepth(bool bEnable);
 	
 	UPROPERTY(EditDefaultsOnly, Category="Weapon properties")
 	TObjectPtr<USkeletalMeshComponent> WeaponMesh;
