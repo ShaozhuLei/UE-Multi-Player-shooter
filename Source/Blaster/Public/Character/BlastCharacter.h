@@ -183,6 +183,9 @@ private:
 	UPROPERTY(ReplicatedUsing = OnRep_OverlappingWeapon)
 	TObjectPtr<AWeapon> OverlappingWeapon;
 
+	UPROPERTY(VisibleAnywhere)
+	class UBuffComponent* Buff;
+
 	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess = "true"))
 	float MaxHealth = 100.f;
 

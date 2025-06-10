@@ -24,6 +24,7 @@ public:
 
 	void EquipWeapon(class AWeapon* WeaponToEquip);
 	void FireButtonPressed(bool bPressed);
+	void PickupAmmo(EWeaponType WeaponType, int32 AmmoAmount);
 	int32 AmountToReload();
 
 	UFUNCTION(BlueprintCallable)
@@ -167,6 +168,9 @@ private:
 
 	UPROPERTY(EditAnywhere)
 	int32 StartingGrenadeLaucher = 4;
+	
+	UPROPERTY(EditAnywhere)
+	int32 MaxCarriedAmmo = 120;
 
 	UPROPERTY(ReplicatedUsing = OnRep_Grenades)
 	int32 Grenades = 4;

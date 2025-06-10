@@ -45,7 +45,13 @@ void UCombatComponent::BeginPlay()
 			DefaultFOV = Character->GetFollowCamera()->FieldOfView;
 			CurrentFOV = DefaultFOV;
 		}
-		if (Character->HasAuthority()) InitializeCarriedAmmo();
+		if (Character->HasAuthority())
+		{
+			InitializeCarriedAmmo();
+			UpdateHUDGrenades();
+		}
+
+		
 	}
 }
 
@@ -251,6 +257,19 @@ void UCombatComponent::FireButtonPressed(bool bPressed)
 	if (bFireButtonPressed && EquippedWeapon)
 	{
 		Fire();
+	}
+}
+
+void UCombatComponent::PickupAmmo(EWeaponType WeaponType, int32 AmmoAmount)
+{
+	if (CarriedAmmoMap.Contains(WeaponType))
+	{
+		CarriedAmmoMap[WeaponType] = FMath::Clamp(CarriedAmmoMap[WeaponType] + AmmoAmount, 0, MaxCarriedAmmo);
+		UpdateCarriedAmmo();
+	}
+	if (EquippedWeapon && EquippedWeapon->IsEmpty() && EquippedWeapon->GetWeaponType() == WeaponType)
+	{
+		Reload();
 	}
 }
 

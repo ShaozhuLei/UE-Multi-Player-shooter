@@ -14,6 +14,7 @@
 #include "Net/UnrealNetwork.h"
 #include "Weapon/Weapon.h"
 #include "Blaster/Blaster.h"
+#include "BlasterComponents/BuffComponent.h"
 #include "GameMode/BlasterGameMode.h"
 #include "Kismet/GameplayStatics.h"
 #include "PlayerController/BlasterPlayerController.h"
@@ -41,6 +42,9 @@ ABlastCharacter::ABlastCharacter()
 
 	Combat = CreateDefaultSubobject<UCombatComponent>("Combat");
 	Combat->SetIsReplicated(true);
+
+	Buff = CreateDefaultSubobject<UBuffComponent>("BuffComponent");
+	Buff->SetIsReplicated(true);
 
 	GetCharacterMovement()->NavAgentProps.bCanCrouch = true;
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera, ECollisionResponse::ECR_Ignore);
@@ -111,10 +115,9 @@ void ABlastCharacter::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>
 void ABlastCharacter::PostInitializeComponents()
 {
 	Super::PostInitializeComponents();
-	if (Combat)
-	{
-		Combat->Character = this;
-	}
+	if (Combat) Combat->Character = this;
+	if (Buff) Buff->Character = this;
+	
 }
 
 void ABlastCharacter::OnRep_ReplicatedMovement()

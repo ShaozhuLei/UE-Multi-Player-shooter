@@ -3,6 +3,7 @@
 
 #include "Weapon/HitScanWeapon.h"
 
+#include "BlasterComponents/CombatComponent.h"
 #include "Character/BlastCharacter.h"
 #include "Engine/SkeletalMeshSocket.h"
 #include "Kismet/GameplayStatics.h"
@@ -106,12 +107,42 @@ void AHitScanWeapon::WeaponTraceHit(const FVector& TraceStart, const FVector& Hi
 		{
 			BeamEnd = OutHit.ImpactPoint;
 		}
+		
+		FVector BeamStart;
+		ABlastCharacter* BlastCharacter = Cast<ABlastCharacter>(GetOwner());
+		
+		if (GetWeaponType() == EWeaponType::EWT_SniperRifle && BlastCharacter->IsAiming())
+		{
+			FVector2d ViewPortSize;
+			if (GEngine && GEngine->GameViewport) GEngine->GameViewport->GetViewportSize(ViewPortSize);
+
+			FVector2D CrossHairLocation(ViewPortSize.X / 2, ViewPortSize.Y / 2);
+			FVector CrosshairWorldPosition;
+			FVector CrosshairWorldDirection;
+
+			//给准心一个游戏世界里的坐标
+			bool bScreenToWorld = UGameplayStatics::DeprojectScreenToWorld(
+				UGameplayStatics::GetPlayerController(this, 0),
+				CrossHairLocation,
+				CrosshairWorldPosition,
+				CrosshairWorldDirection);
+
+			if (bScreenToWorld)
+			{
+				BeamStart = CrosshairWorldPosition + CrosshairWorldDirection * 300;
+			}
+		}
+		else
+		{
+			BeamStart = TraceStart;
+		}
+		
 		if (BeamParticles)
 		{
 			UParticleSystemComponent* Beam = UGameplayStatics::SpawnEmitterAtLocation(
 				World,
 				BeamParticles,
-				TraceStart,
+				BeamStart,
 				FRotator::ZeroRotator,
 				true
 			);
