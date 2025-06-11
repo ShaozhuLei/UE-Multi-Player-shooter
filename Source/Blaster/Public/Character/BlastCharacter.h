@@ -14,6 +14,7 @@
 class UCombatComponent;
 class AWeapon;
 class UOverHeadWidget;
+class UBuffComponent;
 
 UCLASS()
 class BLASTER_API ABlastCharacter : public ACharacter, public IInteractWithCrosshairsInterface
@@ -50,6 +51,7 @@ public:
 	bool IsAiming();
 	void Elim();
 	void PlayThrowGrenadeMontage();
+	void UpdateHUDHealth();
 
 	UFUNCTION(Netmulticast, Reliable)
 	void MultiCastElim();
@@ -61,6 +63,7 @@ public:
 	FORCEINLINE float GetAO_Pitch() const { return AO_Pitch; }
 	FORCEINLINE ETurningInPlace GetTurningInPlace() const { return TurningInPlace; }
 	FORCEINLINE UCameraComponent* GetFollowCamera() const { return FollowCamera; }
+	FORCEINLINE void SetHealth(float Amount) { Health = Amount; }
 	FORCEINLINE bool ShouldRotateRootBone() const { return bRotateRootBone; }
 	FORCEINLINE bool IsElimmed() const {return bElimmed;}
 	FORCEINLINE float GetHealth() const { return Health; }
@@ -69,7 +72,7 @@ public:
 	FORCEINLINE bool GetDisableGameplay() const { return bDisableGameplay; }
 	FORCEINLINE UAnimMontage* GetReloadMontage() const { return ReloadMontage; }
 	FORCEINLINE UStaticMeshComponent* GetAttachedGrenade() const { return AttachedGrenade; }
-	
+	FORCEINLINE UBuffComponent* GetBuff() const { return Buff; }
 
 	/*Movement*/
 	UPROPERTY(EditDefaultsOnly, Category="Input")
@@ -110,14 +113,12 @@ public:
 
 protected:
 	// Called when the game starts or when spawned
-	
-	
 	virtual void BeginPlay() override;
 	virtual void Destroyed() override;
 	void PlayHitReactMontage();
 	void CalculateAO_Pitch();
 	void SimProxiesTurn();
-	void UpdateHUDHealth();
+	
 	void RotateInPlace(float DeltaTime);
 	
 
@@ -196,7 +197,7 @@ private:
 	float Health = 100.f;
 	
 	UFUNCTION()
-	void OnRep_Health();
+	void OnRep_Health(float LastHealth);
 	
 	UFUNCTION()
 	void OnRep_OverlappingWeapon(AWeapon* LastWeapon);

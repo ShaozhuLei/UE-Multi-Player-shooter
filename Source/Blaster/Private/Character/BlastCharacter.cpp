@@ -116,7 +116,15 @@ void ABlastCharacter::PostInitializeComponents()
 {
 	Super::PostInitializeComponents();
 	if (Combat) Combat->Character = this;
-	if (Buff) Buff->Character = this;
+	if (Buff)
+	{
+		Buff->Character = this;
+		Buff->SetInitialSpeeds(
+			GetCharacterMovement()->MaxWalkSpeed, 
+			GetCharacterMovement()->MaxWalkSpeedCrouched,
+			GetCharacterMovement()->JumpZVelocity
+		);
+	}
 	
 }
 
@@ -451,10 +459,11 @@ void ABlastCharacter::GrenadeButtonPressed()
 }
 
 
-void ABlastCharacter::OnRep_Health()
+void ABlastCharacter::OnRep_Health(float LastHealth)
 {
 	UpdateHUDHealth();
-	PlayHitReactMontage();
+	//此时正在掉血
+	if (Health < LastHealth) PlayHitReactMontage();
 }
 
 void ABlastCharacter::UpdateHUDHealth()

@@ -3,22 +3,20 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "EnumTypes.h"
 #include "Pickups/Pickup.h"
-#include "AmmoPickup.generated.h"
+#include "HealthPickup.generated.h"
 
 /**
  * 
  */
 UCLASS()
-class BLASTER_API AAmmoPickup : public APickup
+class BLASTER_API AHealthPickup : public APickup
 {
 	GENERATED_BODY()
-	AAmmoPickup();
-	
+
+public:
+	AHealthPickup();
 protected:
-	
-	
 	virtual void OnSphereOverlap(
 		UPrimitiveComponent* OverlappedComponent,
 		AActor* OtherActor,
@@ -27,11 +25,13 @@ protected:
 		bool bFromSweep,
 		const FHitResult& SweepResult
 	);
-	
 private:
-	UPROPERTY(EditAnywhere)
-	int32 AmmoAmount = 30;
 
 	UPROPERTY(EditAnywhere)
-	EWeaponType WeaponType;	
-};
+	float HealAmount = 100.f;
+
+	UPROPERTY(EditAnywhere)
+	float HealingTime = 5.f;
+	
+};	
+
