@@ -6,6 +6,7 @@
 #include "EnumTypes.h"
 #include "InputMappingContext.h"
 #include "Camera/CameraComponent.h"
+#include "Components/BoxComponent.h"
 #include "Components/WidgetComponent.h"
 #include "GameFramework/Character.h"
 #include "Interface/InteractWithCrosshairsInterface.h"
@@ -52,6 +53,9 @@ public:
 	void Elim();
 	void PlayThrowGrenadeMontage();
 	void UpdateHUDHealth();
+	void UpdateHUDShield();
+	void UpdateHUDAmmo();
+	void SpawnDefaultWeapon();
 
 	UFUNCTION(Netmulticast, Reliable)
 	void MultiCastElim();
@@ -68,11 +72,15 @@ public:
 	FORCEINLINE bool IsElimmed() const {return bElimmed;}
 	FORCEINLINE float GetHealth() const { return Health; }
 	FORCEINLINE float GetMaxHealth() const { return MaxHealth; }
+	FORCEINLINE float GetShield() const { return Shield; }
+	FORCEINLINE void SetShield(float Amount) { Shield = Amount; }
+	FORCEINLINE float GetMaxShield() const { return MaxShield; }
 	FORCEINLINE UCombatComponent* GetCombat() const { return Combat; }
 	FORCEINLINE bool GetDisableGameplay() const { return bDisableGameplay; }
 	FORCEINLINE UAnimMontage* GetReloadMontage() const { return ReloadMontage; }
 	FORCEINLINE UStaticMeshComponent* GetAttachedGrenade() const { return AttachedGrenade; }
 	FORCEINLINE UBuffComponent* GetBuff() const { return Buff; }
+	FORCEINLINE ULagCompensationComponent* GetLagCompensation() const { return LagCompensation; }
 
 	/*Movement*/
 	UPROPERTY(EditDefaultsOnly, Category="Input")
@@ -101,6 +109,9 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, Category="Input")
 	TObjectPtr<UInputAction> ReloadAction;
+	
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<AWeapon> DefaultWeaponClass;
 
 	UFUNCTION(BlueprintImplementableEvent)
 	void ShowSniperScopeWidget(bool bShowScope);
@@ -111,6 +122,9 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void SetScopeState(bool ScopeState);
 
+	UPROPERTY()
+	TMap<FName, UBoxComponent*> HitCollisionBoxes;
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -118,8 +132,9 @@ protected:
 	void PlayHitReactMontage();
 	void CalculateAO_Pitch();
 	void SimProxiesTurn();
-	
 	void RotateInPlace(float DeltaTime);
+	void DropOrDestroyWeapon(AWeapon* Weapon);
+	void DropOrDestroyWeapons();
 	
 
 	UPROPERTY(EditAnywhere, Category="Combat")
@@ -128,6 +143,57 @@ protected:
 	UFUNCTION()
 	void ReceiveDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, class AController* InstigatorController, AActor* DamageCauser);
 
+	/** Add commentMore actions
+	* Hit boxes used for server-side rewind
+	*/
+
+	UPROPERTY(EditAnywhere)
+	class UBoxComponent* head;
+
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* pelvis;
+
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* spine_02;
+
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* spine_03;
+
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* upperarm_l;
+
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* upperarm_r;
+
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* lowerarm_l;
+
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* lowerarm_r;
+
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* hand_l;
+
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* hand_r;
+	
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* thigh_l;
+
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* thigh_r;
+
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* calf_l;
+
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* calf_r;
+
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* foot_l;
+
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* foot_r;
 private:
 	
 	ETurningInPlace TurningInPlace;
@@ -139,6 +205,7 @@ private:
 	float TurnThreshold = 0.5f;
 	bool bRotateRootBone;
 	bool bElimmed = false;
+	
 	FRotator StartingAimRotation;
 	FRotator ProxyRotationLastFrame;
 	FRotator ProxyRotation;
@@ -152,6 +219,7 @@ private:
 
 	void ElimTimerFinished();
 	float CalculateSpeed();
+	bool IsLocallyReloading();
 
 	/** Montages*/
 	UPROPERTY(EditAnywhere, Category = Combat)
@@ -174,6 +242,9 @@ private:
 
 	UPROPERTY(EditAnywhere, Category="Input")
 	TObjectPtr<UInputMappingContext> SlashMappingContext;
+
+	UPROPERTY(VisibleAnywhere)
+	TObjectPtr<class ULagCompensationComponent> LagCompensation;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UWidgetComponent> OverHeadWidget;
@@ -218,6 +289,19 @@ private:
 
 	UPROPERTY(VisibleAnywhere)
 	TObjectPtr<UStaticMeshComponent> AttachedGrenade ;
+
+	/** Add commentMore actions
+	* Player shield
+	*/
+
+	UPROPERTY(EditAnywhere, Category = "Player Stats")
+	float MaxShield = 100.f;
+
+	UPROPERTY(ReplicatedUsing = OnRep_Shield, VisibleAnywhere, Category = "Player Stats")
+	float Shield = 0.f;
+
+	UFUNCTION()
+	void OnRep_Shield(float LastShield);
 };
 
 

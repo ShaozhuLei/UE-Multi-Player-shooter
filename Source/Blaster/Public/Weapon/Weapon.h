@@ -31,6 +31,8 @@ public:
 	void SetHUDAmmo();
 	bool IsEmpty() const;
 	bool IsFull() const;
+	void EnableCustomDepth(bool bEnable);
+	FVector TraceEndWithScatter(const FVector& HitTarget);
 	
 
 	FORCEINLINE USphereComponent* GetAreaSphere() const { return AreaSphere; }
@@ -40,6 +42,7 @@ public:
 	FORCEINLINE EWeaponType GetWeaponType(){return WeaponType;}
 	FORCEINLINE int32 GetAmmo(){return Ammo;}
 	FORCEINLINE int32 GetMagCapacity(){return MagCapacity;}
+	FORCEINLINE float GetDamage(){return Damage;}
 
 	/**
 	* Textures for the weapon crosshairs
@@ -68,9 +71,27 @@ public:
 	UPROPERTY(EditAnywhere)
 	class USoundBase* EquipSound;
 
+	UPROPERTY(EditAnywhere)
+	EFireType FireType;
+
+	UPROPERTY(EditAnywhere, Category = "Weapon Scatter")
+	bool bUseScatter = false;
+
+	bool bDestroyWeapon = false;
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
+	virtual void OnWeaponStateSet();
+	virtual void OnEquipped();
+	virtual void OnDropped();
+	virtual void OnEquippedSecondary();
+
+	UPROPERTY(EditAnywhere, Category = "Weapon Scatter")
+	float DistanceToSphere = 800.f;
+
+	UPROPERTY(EditAnywhere, Category = "Weapon Scatter")
+	float SphereRadius = 75.f;
 
 	UFUNCTION()
 	virtual void OnSphereOverlap(
@@ -89,12 +110,26 @@ protected:
 		UPrimitiveComponent* OtherComp,
 		int32 OtherBodyIndex);
 
+	UPROPERTY(EditAnywhere)
+	float Damage = 20.f;
+
+	UPROPERTY(EditAnywhere)
+	bool bUseServerSideRewind = false;
+
+	UPROPERTY()
+	class ABlastCharacter* BlasterOwnerCharacter;
+	
+	UPROPERTY()
+	class ABlasterPlayerController* BlasterOwnerController;
+
 private:
 
 	UFUNCTION()
 	void SpendRound();
 
-	void EnableCustomDepth(bool bEnable);
+	// The number of unprocessed server requests for Ammo.Add commentMore actions
+	// Incremented in SpendRound, decremented in ClientUpdateAmmo.
+	int32 Sequence = 0;
 	
 	UPROPERTY(EditDefaultsOnly, Category="Weapon properties")
 	TObjectPtr<USkeletalMeshComponent> WeaponMesh;
@@ -114,17 +149,11 @@ private:
 	UPROPERTY(EditDefaultsOnly)
 	TSubclassOf<ACasing> CasingSubclass;
 
-	UPROPERTY(EditAnywhere, ReplicatedUsing = OnRep_Ammo)
+	UPROPERTY(EditAnywhere)
 	int32 Ammo;
 
 	UPROPERTY(EditDefaultsOnly, Category="Weapon Properties")
 	EWeaponType WeaponType;
-	
-	UPROPERTY()
-	class ABlastCharacter* BlasterOwnerCharacter;
-	
-	UPROPERTY()
-	class ABlasterPlayerController* BlasterOwnerController;
 
 	UPROPERTY(EditAnywhere)
 	int32 MagCapacity;
@@ -142,8 +171,15 @@ private:
 	UFUNCTION()
 	void OnRep_WeaponState();
 
-	UFUNCTION()
-	void OnRep_Ammo();
+	UFUNCTION(Client, Reliable)
+	void ClientUpdateAmmo(int32 ServerAmmo);
+
+	UFUNCTION(Client, Reliable)
+	void ClientAddAmmo(int32 AmmoToAdd);
+
+	
 };
+
+
 
 

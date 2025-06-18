@@ -18,6 +18,7 @@ public:
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 	friend class ABlastCharacter;
 	void Heal(float HealAmount, float HealingTime);
+	void ReplenishShield(float ShieldAmount, float ReplenishTime);
 	void BuffSpeed(float BuffBaseSpeed, float BuffCrouchSpeed, float BuffTime);
 	void BuffJump(float JumpSpeed, float BuffTime);
 	void SetInitialSpeeds(float BaseSpeed, float CrouchSpeed, float JumpZVelocity);
@@ -25,12 +26,12 @@ public:
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
-
+	void ShieldRampUp(float DeltaTime);
 	void HealRampUp(float DeltaTime);
 
 private:
 	bool bHealing = false;
-	float HealingRate = 0;
+	float HealingRate = 0.f;
 	float AmountToHeal = 0.f;
 	
 	UPROPERTY()
@@ -44,6 +45,10 @@ private:
 	FTimerHandle JumpBuffTimer;
 	void ResetJumpSpeeds();
 	float InitialJumpSpeed;
+
+	bool bReplenishingShield = false;
+	float ShieldReplenishRate = 0.f;
+	float ShieldReplenishAmount = 0.f;
 
 	UFUNCTION(NetMulticast, Reliable)
 	void MulticastSpeedBuff(float BaseSpeed, float CrouchSpeed);

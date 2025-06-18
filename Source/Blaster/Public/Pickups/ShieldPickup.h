@@ -4,31 +4,30 @@
 
 #include "CoreMinimal.h"
 #include "Pickups/Pickup.h"
-#include "JumpPickup.generated.h"
+#include "ShieldPickup.generated.h"
 
 /**
  * 
  */
 UCLASS()
-class BLASTER_API AJumpPickup : public APickup
+class BLASTER_API AShieldPickup : public APickup
 {
 	GENERATED_BODY()
 
 protected:
-	
 	virtual void OnSphereOverlap(
 		UPrimitiveComponent* OverlappedComponent,
 		AActor* OtherActor,
 		UPrimitiveComponent* OtherComp,
 		int32 OtherBodyIndex,
 		bool bFromSweep,
-		const FHitResult& SweepResult);
-
-
+		const FHitResult& SweepResult
+	);
 private:
-	UPROPERTY(EditAnywhere)
-	float JumpZVelocity = 1000.f;
 
-	UPROPERTY(EditDefaultsOnly)
-	float JumpBuffTime = 30.f;
+	UPROPERTY(EditAnywhere)
+	float ShieldReplenishAmount = 100.f;
+
+	UPROPERTY(EditAnywhere)
+	float ShieldReplenishTime = 5.f;	
 };

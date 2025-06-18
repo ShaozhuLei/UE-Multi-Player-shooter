@@ -23,8 +23,12 @@ public:
 	friend class ABlastCharacter;
 
 	void EquipWeapon(class AWeapon* WeaponToEquip);
+	void SwapWeapons();
 	void FireButtonPressed(bool bPressed);
 	void PickupAmmo(EWeaponType WeaponType, int32 AmmoAmount);
+	bool ShouldSwapWeapons();
+	
+	FORCEINLINE int32 GetGrenades() const {return Grenades;}
 	int32 AmountToReload();
 
 	UFUNCTION(BlueprintCallable)
@@ -54,18 +58,33 @@ protected:
 	void Reload();
 	void HandleReload();
 	void DropEquippedWeapon();
+	void AttachActorToBackpack(AActor* ActorToAttach);
+	void PlayEquipWeaponSound(AWeapon* WeaponToEquip);
 	void AttachActorToRightHand(AActor* ActorToAttach);
 	void AttachActorToLeftHand(AActor* ActorToAttach);
 	void UpdateCarriedAmmo();
 	void PlayEquipWeaponSound();
 	void ReloadEmptyWeapon();
 	void ShowAttachedGrenade(bool bShowGrenade);
+	void EquipPrimaryWeapon(AWeapon* WeaponToEquip);
+	void EquipSecondaryWeapon(AWeapon* WeaponToEquip);
+	void FireProjectileWeapon();
+	void FireHitScanWeapon();
+	void FireShotgun();
+	void ShotgunLocalFire(const TArray<FVector_NetQuantize>& TraceHitTargets);
+
+	bool bAimButtonPressed = false;
+	
+	void LocalFire(const FVector_NetQuantize& TraceHitTarget);
 
 	UFUNCTION(Server, Reliable)
 	void ServerSetAiming(bool bIsAiming);
 
 	UFUNCTION()
 	void OnRep_EquippedWeapon();
+
+	UFUNCTION()
+	void OnRep_SecondaryWeapon();
 	
 	UFUNCTION(Server, Reliable)
 	void ServerFire(const FVector_NetQuantize& TraceHitTarget);
@@ -84,6 +103,12 @@ protected:
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<class AProjectile> GrenadeClass;
 
+	UFUNCTION(Server, Reliable)
+	void ServerShotgunFire(const TArray<FVector_NetQuantize>& TraceHitTargets);
+
+	UFUNCTION(NetMulticast, Reliable)
+	void MulticastShotgunFire(const TArray<FVector_NetQuantize>& TraceHitTargets);
+
 private:
 
 	float CrosshairVelocityFactor;
@@ -93,6 +118,8 @@ private:
 	float CrosshairAimFactor;
 	float CrosshairShootingFactor;
 	bool bFireButtonPressed;
+	bool bLocallyReloading = false;
+	
 	FVector HitTarget;
 	FHUDPackage HUDPackage;
 	FTimerHandle FireTimer;
@@ -116,8 +143,14 @@ private:
 	UPROPERTY(ReplicatedUsing = OnRep_EquippedWeapon)
 	TObjectPtr<AWeapon> EquippedWeapon;
 
-	UPROPERTY(Replicated)
+	UPROPERTY(ReplicatedUsing = OnRep_SecondaryWeapon)
+	AWeapon* SecondaryWeapon;
+
+	UPROPERTY(ReplicatedUsing= OnRep_Aiming)
 	bool bAiming;
+
+	UFUNCTION()
+	void OnRep_Aiming();
 
 	UPROPERTY(EditAnywhere)
 	float BaseWalkSpeed;
@@ -182,5 +215,11 @@ private:
 	void UpdateShotgunAmmoValues();
 	void UpdateHUDGrenades();
 };
+
+
+
+
+
+
 
 

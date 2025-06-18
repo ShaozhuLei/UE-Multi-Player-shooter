@@ -17,6 +17,7 @@ class BLASTER_API ABlasterPlayerController : public APlayerController
 
 public:
 	void SetHUDHealth(float Health, float MaxHealth);
+	void SetHUDShield(float Shield, float MaxShield);
 	void SetHUDScore(float Score);
 	void SetHUDDefeats(int32 DefeatsAmount);
 	void SetHUDWeaponAmmo(int32 Ammo);
@@ -27,10 +28,15 @@ public:
 	void HandleMatchHasStarted();
 	void SetHUDAnnouncementCountdown(float CountdownTime);
 	void HandleCooldown();
+	void HighPingWarning();
+	void StopHighPingWarning();
+	void CheckPing(float DeltaTime);
 	virtual void Tick(float DeltaTime) override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	virtual float GetServerTime(); // Synced with server world clockAdd commentMore actions
 	virtual void ReceivedPlayer() override; // Sync with server clock as soon as possible
+
+	float SingleTripTime = 0.f;
 
 protected:
 	virtual void BeginPlay() override;
@@ -70,25 +76,48 @@ private:
 	float MatchTime = 0.f;
 	float WarmupTime = 0.f;
 	float CooldownTime = 0.f;
+	
 	//结束时间
 	uint32 CountdownInt = 0;
 
 	UPROPERTY(ReplicatedUsing = OnRep_MatchState)
 	FName MatchState;
 
+	float HighPingRunningTime = 0.f;
+
+	UPROPERTY(EditAnywhere)
+	float HighPingDuration = 5.f;
+
+	float PingAnimationRunningTime = 0.f;
+
+	UPROPERTY(EditAnywhere)
+	float  CheckPingFrequency = 20.f;
+
+	UPROPERTY(EditAnywhere)
+	float HighPingThreshold = 50.f;
+	
 	UFUNCTION()
 	void OnRep_MatchState();
 
 	UPROPERTY()
 	class UCharacterOverlay* CharacterOverlay;
 	
-	bool bInitializeCharacterOverlay = false;
-
 	float HUDHealth;
+	bool bInitializeHealth = false;
 	float HUDMaxHealth;
 	float HUDScore;
+	bool bInitializeScore = false;
 	int32 HUDDefeats;
+	bool bInitializeDefeats = false;
 	int32 HUDGrenades;
+	bool bInitializeGrenades = false;
+	float HUDShield;
+	bool bInitializeShield = false;
+	float HUDMaxShield;
+	float HUDCarriedAmmo;
+	bool bInitializeCarriedAmmo = false;
+	float HUDWeaponAmmo;
+	bool bInitializeWeaponAmmo = false;
 };
 
 
