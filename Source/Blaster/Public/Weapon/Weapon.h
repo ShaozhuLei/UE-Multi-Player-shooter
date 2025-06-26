@@ -43,6 +43,7 @@ public:
 	FORCEINLINE int32 GetAmmo(){return Ammo;}
 	FORCEINLINE int32 GetMagCapacity(){return MagCapacity;}
 	FORCEINLINE float GetDamage(){return Damage;}
+	FORCEINLINE float GetheadshotDamage(){return HeadshotDamage;}
 
 	/**
 	* Textures for the weapon crosshairs
@@ -87,6 +88,9 @@ protected:
 	virtual void OnDropped();
 	virtual void OnEquippedSecondary();
 
+	UPROPERTY(EditDefaultsOnly, Category="Weapon properties")
+	TObjectPtr<USkeletalMeshComponent> WeaponMesh;
+
 	UPROPERTY(EditAnywhere, Category = "Weapon Scatter")
 	float DistanceToSphere = 800.f;
 
@@ -114,6 +118,9 @@ protected:
 	float Damage = 20.f;
 
 	UPROPERTY(EditAnywhere)
+	float HeadshotDamage = 40.f;
+
+	UPROPERTY(Replicated, EditAnywhere)
 	bool bUseServerSideRewind = false;
 
 	UPROPERTY()
@@ -121,6 +128,12 @@ protected:
 	
 	UPROPERTY()
 	class ABlasterPlayerController* BlasterOwnerController;
+
+	UPROPERTY(EditAnywhere, Category = "Weapon Properties")
+	UAnimationAsset* FireAnimation;
+
+	UFUNCTION()
+	void OnPingTooHigh(bool bPingTooHigh);
 
 private:
 
@@ -130,9 +143,6 @@ private:
 	// The number of unprocessed server requests for Ammo.Add commentMore actions
 	// Incremented in SpendRound, decremented in ClientUpdateAmmo.
 	int32 Sequence = 0;
-	
-	UPROPERTY(EditDefaultsOnly, Category="Weapon properties")
-	TObjectPtr<USkeletalMeshComponent> WeaponMesh;
 
 	UPROPERTY(VisibleAnywhere, Category="Weapon properties")
 	TObjectPtr<USphereComponent> AreaSphere;
@@ -142,9 +152,6 @@ private:
 
 	UPROPERTY(VisibleAnywhere, Category = "Weapon Properties")
 	TObjectPtr<UWidgetComponent> PickupWidget;
-	
-	UPROPERTY(EditAnywhere, Category = "Weapon Properties")
-	UAnimationAsset* FireAnimation;
 
 	UPROPERTY(EditDefaultsOnly)
 	TSubclassOf<ACasing> CasingSubclass;

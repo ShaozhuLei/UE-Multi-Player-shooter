@@ -12,10 +12,14 @@
 #include "Interface/InteractWithCrosshairsInterface.h"
 #include "BlastCharacter.generated.h"
 
+class ABlasterGameMode;
 class UCombatComponent;
 class AWeapon;
 class UOverHeadWidget;
 class UBuffComponent;
+class ULagCompensationComponent;
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnLeftGame);
 
 UCLASS()
 class BLASTER_API ABlastCharacter : public ACharacter, public IInteractWithCrosshairsInterface
@@ -50,7 +54,7 @@ public:
 	void PollInt();
 	bool IsEquipped() const;
 	bool IsAiming();
-	void Elim();
+	void Elim(bool bPlayerLeftGame);
 	void PlayThrowGrenadeMontage();
 	void UpdateHUDHealth();
 	void UpdateHUDShield();
@@ -58,7 +62,7 @@ public:
 	void SpawnDefaultWeapon();
 
 	UFUNCTION(Netmulticast, Reliable)
-	void MultiCastElim();
+	void MultiCastElim(bool bPlayerLeftGame);
 	
 	AWeapon* GetEquippedWeapon();
 	FVector GetHitTarget() const;
@@ -116,6 +120,9 @@ public:
 	UFUNCTION(BlueprintImplementableEvent)
 	void ShowSniperScopeWidget(bool bShowScope);
 
+	UFUNCTION(Server, Reliable)
+	void ServerLeaveGame();
+
 	UPROPERTY(Replicated)
 	bool bDisableGameplay = false;
 
@@ -124,6 +131,8 @@ public:
 
 	UPROPERTY()
 	TMap<FName, UBoxComponent*> HitCollisionBoxes;
+
+	FOnLeftGame OnLeftGame;
 
 protected:
 	// Called when the game starts or when spawned
@@ -135,6 +144,7 @@ protected:
 	void RotateInPlace(float DeltaTime);
 	void DropOrDestroyWeapon(AWeapon* Weapon);
 	void DropOrDestroyWeapons();
+	void HighlightEnemies();
 	
 
 	UPROPERTY(EditAnywhere, Category="Combat")
@@ -142,7 +152,6 @@ protected:
 	
 	UFUNCTION()
 	void ReceiveDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, class AController* InstigatorController, AActor* DamageCauser);
-
 	/** Add commentMore actions
 	* Hit boxes used for server-side rewind
 	*/
@@ -205,6 +214,9 @@ private:
 	float TurnThreshold = 0.5f;
 	bool bRotateRootBone;
 	bool bElimmed = false;
+	bool bLeftGame = false;
+
+	
 	
 	FRotator StartingAimRotation;
 	FRotator ProxyRotationLastFrame;
@@ -220,6 +232,9 @@ private:
 	void ElimTimerFinished();
 	float CalculateSpeed();
 	bool IsLocallyReloading();
+
+	UPROPERTY()
+	ABlasterGameMode* BlasterGameMode;
 
 	/** Montages*/
 	UPROPERTY(EditAnywhere, Category = Combat)

@@ -22,4 +22,7 @@ private:
 	
 	UPROPERTY(EditDefaultsOnly)
 	TSubclassOf<AProjectile> ProjectileClass;
+
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<AProjectile> ServerSideRewindProjectileClass;
 };

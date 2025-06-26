@@ -16,6 +16,20 @@ public:
 	AProjectile();
 	virtual void Tick(float DeltaTime) override;
 	virtual void Destroyed() override;
+
+	bool bUseServerSideRewind = false;
+	FVector_NetQuantize TraceStart;
+	FVector_NetQuantize100 InitialVelocity;
+
+	UPROPERTY(EditAnywhere)
+	float InitialSpeed = 15000;
+
+	UPROPERTY(EditAnywhere)
+	float Damage = 20.f;
+
+	// Doesn't matter for Grenades and Rockets
+	UPROPERTY(EditAnywhere)
+	float HeadShotDamage = 40.f;
 	
 protected:
 	// Called when the game starts or when spawned
@@ -37,9 +51,6 @@ protected:
 	UPROPERTY(EditDefaultsOnly)
 	class USoundBase* ImpactSound;
 	
-	UPROPERTY(EditDefaultsOnly, Category="Projectile Property")
-	float Damage;
-
 	UPROPERTY(EditAnywhere)
 	class UNiagaraSystem* TrailSystem;
 

@@ -7,6 +7,10 @@
 #include "HUD/BlastHUD.h"
 #include "BlasterPlayerController.generated.h"
 
+class ABlasterPlayerState;
+class ABlastCharacter;
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FHighPingDelegate, bool, bPingTooHigh);
+
 /**
  * 
  */
@@ -24,13 +28,18 @@ public:
 	void SetHUDCarriedAmmo(int32 Ammo);
 	void SetHUDMatchCountdown(float Countdown);
 	void SetHUDGrenades(int32 Grenades);
-	void OnMatchStateSet(FName State);
-	void HandleMatchHasStarted();
+	void OnMatchStateSet(FName State, bool bTeamsMatch = false);
+	void HandleMatchHasStarted(bool bTeamsMatch = false);
 	void SetHUDAnnouncementCountdown(float CountdownTime);
 	void HandleCooldown();
 	void HighPingWarning();
 	void StopHighPingWarning();
 	void CheckPing(float DeltaTime);
+	void BroadcastElim(APlayerState* Attacker, APlayerState* Victim);
+	void HideTeamScores();
+	void InitTeamScores();
+	void SetHUDRedTeamScore(int32 RedScore);
+	void SetHUDBlueTeamScore(int32 BlueScore);
 	virtual void Tick(float DeltaTime) override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	virtual float GetServerTime(); // Synced with server world clockAdd commentMore actions
@@ -38,11 +47,19 @@ public:
 
 	float SingleTripTime = 0.f;
 
+	FHighPingDelegate HighPingDelegate;
+
 protected:
 	virtual void BeginPlay() override;
 	virtual void OnPossess(APawn* InPawn) override;
+	virtual void SetupInputComponent() override;
 	void SetHUDTime();
 	void PollInit();
+	void CheckTimeSync(float DeltaTime);
+	void ShowReturnToMainMenu();
+
+	UFUNCTION(Client, Reliable)
+	void ClientElimAnnouncement(APlayerState* Attacker, APlayerState* Victim);
 
 	// Requests the current server time, passing in the client's time when the request was sentAdd commentMore actions
 	UFUNCTION(Server, Reliable)
@@ -64,7 +81,16 @@ protected:
 	float TimeSyncFrequency = 5.f;
 
 	float TimeSyncRunningTime = 0.f;
-	void CheckTimeSync(float DeltaTime);
+
+	UPROPERTY(ReplicatedUsing = OnRep_ShowTeamScores)
+	bool bShowTeamScores = false;
+
+	UFUNCTION()
+	void OnRep_ShowTeamScores();
+
+	
+	FString GetInfoText(TArray<ABlasterPlayerState*>& Players);
+	FString GetTeamInfoText(class ABlasterGameState* BlasterGameState);
 
 private:
 
@@ -77,21 +103,20 @@ private:
 	float WarmupTime = 0.f;
 	float CooldownTime = 0.f;
 	
-	//结束时间
-	uint32 CountdownInt = 0;
+	UPROPERTY(EditAnywhere, Category = HUD)
+	TSubclassOf<class UUserWidget> ReturnToMainMenuWidget;
 
+	UPROPERTY()
+	class UReturnToMainMenu* ReturnToMainMenu;
+	
 	UPROPERTY(ReplicatedUsing = OnRep_MatchState)
 	FName MatchState;
-
-	float HighPingRunningTime = 0.f;
-
+	
 	UPROPERTY(EditAnywhere)
 	float HighPingDuration = 5.f;
-
-	float PingAnimationRunningTime = 0.f;
-
+	
 	UPROPERTY(EditAnywhere)
-	float  CheckPingFrequency = 20.f;
+	float CheckPingFrequency = 20.f;
 
 	UPROPERTY(EditAnywhere)
 	float HighPingThreshold = 50.f;
@@ -101,7 +126,14 @@ private:
 
 	UPROPERTY()
 	class UCharacterOverlay* CharacterOverlay;
-	
+
+	UFUNCTION(Server, Reliable)
+	void ServerReportPingStatus(bool bHighPing);
+
+	bool bReturnToMainMenuOpen = false;
+	uint32 CountdownInt = 0;
+	float HighPingRunningTime = 0.f;
+	float PingAnimationRunningTime = 0.f;
 	float HUDHealth;
 	bool bInitializeHealth = false;
 	float HUDMaxHealth;
@@ -119,6 +151,10 @@ private:
 	float HUDWeaponAmmo;
 	bool bInitializeWeaponAmmo = false;
 };
+
+
+
+
 
 
 

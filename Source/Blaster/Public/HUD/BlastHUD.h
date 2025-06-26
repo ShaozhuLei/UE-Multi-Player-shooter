@@ -6,6 +6,7 @@
 #include "GameFramework/HUD.h"
 #include "BlastHUD.generated.h"
 
+class UElimAnnouncement;
 class UAnnouncement;
 class UCharacterOverlay;
 /**
@@ -49,18 +50,29 @@ public:
 	
 	void AddCharacterOverlay();
 	void AddAnnouncement();
+	void AddElimAnnouncement(FString Attacker, FString Victim);
+	void ElimAnnouncementTimerFinished(UElimAnnouncement* MsgToRemove);
 
 protected:
 
 	virtual void BeginPlay() override;
-	
-	
+
 private:
 	FHUDPackage HUDPackage;
+	float ElimAnnounceTime = 3.f;
+	
 	void DrawCrosshair(UTexture2D* Texture, FVector2D ViewportCenter, FVector2D Spread, FLinearColor CrosshairColor);
+
+	UPROPERTY()
+	TArray<UElimAnnouncement*> ElimMessages;
+
+	UPROPERTY()
+	class APlayerController* OwningPlayer;
 
 	UPROPERTY(EditAnywhere)
 	float CrosshairSpreadMax = 16.f;
 
+	UPROPERTY(EditDefaultsOnly)
+	TSubclassOf<UElimAnnouncement> ElimAnnouncementClass;
 	
 };

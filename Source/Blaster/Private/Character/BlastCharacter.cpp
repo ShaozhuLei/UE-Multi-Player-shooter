@@ -22,6 +22,7 @@
 #include "BlasterComponents/LagCompensationComponent.h"
 #include "Components/BoxComponent.h"
 #include "BlasterComponents/LagCompensationComponent.h"
+#include "GameState/BlasterGameState.h"
 // Sets default values
 ABlastCharacter::ABlastCharacter()
 {
@@ -68,84 +69,78 @@ ABlastCharacter::ABlastCharacter()
 
 	head = CreateDefaultSubobject<UBoxComponent>(TEXT("head"));
 	head->SetupAttachment(GetMesh(), FName("head"));
-	head->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	HitCollisionBoxes.Emplace(FName("Head"), head);
 
 	pelvis = CreateDefaultSubobject<UBoxComponent>(TEXT("pelvis"));
 	pelvis->SetupAttachment(GetMesh(), FName("pelvis"));
-	pelvis->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	HitCollisionBoxes.Emplace(FName("pelvis"), pelvis);
 
 	spine_02 = CreateDefaultSubobject<UBoxComponent>(TEXT("spine_02"));
 	spine_02->SetupAttachment(GetMesh(), FName("spine_02"));
-	spine_02->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	HitCollisionBoxes.Emplace(FName("spine_02"), spine_02);
 
 	spine_03 = CreateDefaultSubobject<UBoxComponent>(TEXT("spine_03"));
 	spine_03->SetupAttachment(GetMesh(), FName("spine_03"));
-	spine_03->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	HitCollisionBoxes.Emplace(FName("spine_03"), spine_03);
 
 	upperarm_l = CreateDefaultSubobject<UBoxComponent>(TEXT("Upperarm_L"));
 	upperarm_l->SetupAttachment(GetMesh(), FName("Upperarm_L"));
-	upperarm_l->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	HitCollisionBoxes.Emplace(FName("Upperarm_L"), upperarm_l);
 
 	upperarm_r = CreateDefaultSubobject<UBoxComponent>(TEXT("Upperarm_R"));
 	upperarm_r->SetupAttachment(GetMesh(), FName("Upperarm_R"));
-	upperarm_r->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	HitCollisionBoxes.Emplace(FName("Upperarm_R"), upperarm_r);
 
 	lowerarm_l = CreateDefaultSubobject<UBoxComponent>(TEXT("lowerarm_l"));
 	lowerarm_l->SetupAttachment(GetMesh(), FName("lowerarm_l"));
-	lowerarm_l->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	HitCollisionBoxes.Emplace(FName("lowerarm_l"), lowerarm_l);
 
 	lowerarm_r = CreateDefaultSubobject<UBoxComponent>(TEXT("lowerarm_r"));
 	lowerarm_r->SetupAttachment(GetMesh(), FName("lowerarm_r"));
-	lowerarm_r->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	HitCollisionBoxes.Emplace(FName("lowerarm_l"), lowerarm_l);
 
 	hand_l = CreateDefaultSubobject<UBoxComponent>(TEXT("Hand_L"));
 	hand_l->SetupAttachment(GetMesh(), FName("Hand_L"));
-	hand_l->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	HitCollisionBoxes.Emplace(FName("Hand_L"), hand_l);
 
 	hand_r = CreateDefaultSubobject<UBoxComponent>(TEXT("Hand_R"));
 	hand_r->SetupAttachment(GetMesh(), FName("Hand_R"));
-	hand_r->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	HitCollisionBoxes.Emplace(FName("Hand_R"), hand_r);
 	
 	thigh_l = CreateDefaultSubobject<UBoxComponent>(TEXT("Thigh_L"));
 	thigh_l->SetupAttachment(GetMesh(), FName("Thigh_L"));
-	thigh_l->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	HitCollisionBoxes.Emplace(FName("Thigh_L"), thigh_l);
 
 	thigh_r = CreateDefaultSubobject<UBoxComponent>(TEXT("Thigh_R"));
 	thigh_r->SetupAttachment(GetMesh(), FName("Thigh_R"));
-	thigh_r->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	HitCollisionBoxes.Emplace(FName("Thigh_R"), thigh_r);
 
 	calf_l = CreateDefaultSubobject<UBoxComponent>(TEXT("calf_l"));
 	calf_l->SetupAttachment(GetMesh(), FName("calf_l"));
-	calf_l->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	HitCollisionBoxes.Emplace(FName("calf_l"), calf_l);
 
 	calf_r = CreateDefaultSubobject<UBoxComponent>(TEXT("calf_r"));
 	calf_r->SetupAttachment(GetMesh(), FName("calf_r"));
-	calf_r->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	HitCollisionBoxes.Emplace(FName("calf_r"), calf_r);
 
 	foot_l = CreateDefaultSubobject<UBoxComponent>(TEXT("Foot_L"));
 	foot_l->SetupAttachment(GetMesh(), FName("Foot_L"));
-	foot_l->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	HitCollisionBoxes.Emplace(FName("Foot_L"), foot_l);
 
 	foot_r = CreateDefaultSubobject<UBoxComponent>(TEXT("Foot_R"));
 	foot_r->SetupAttachment(GetMesh(), FName("Foot_R"));
-	foot_r->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	HitCollisionBoxes.Emplace(FName("Foot_R"), foot_r);
 
+	for (auto Box : HitCollisionBoxes)
+	{
+		if (Box.Value)
+		{
+			Box.Value->SetCollisionObjectType(ECC_HitBox);
+			Box.Value->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
+			Box.Value->SetCollisionResponseToChannel(ECC_HitBox, ECollisionResponse::ECR_Block);
+			Box.Value->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		}
+	}
 	
 }
 
@@ -175,12 +170,13 @@ void ABlastCharacter::BeginPlay()
 	{
 		AttachedGrenade->SetVisibility(false);
 	}
+	HighlightEnemies();
 }
 
 void ABlastCharacter::Destroyed()
 {
 	Super::Destroyed();
-	ABlasterGameMode* BlasterGameMode = Cast<ABlasterGameMode>(UGameplayStatics::GetGameMode(this));
+	BlasterGameMode = BlasterGameMode == nullptr? Cast<ABlasterGameMode>(UGameplayStatics::GetGameMode(this)) : BlasterGameMode;
 	bool bMatchNotInProgress = BlasterGameMode && BlasterGameMode->GetMatchState() != MatchState::InProgress;
 	if (Combat && Combat->EquippedWeapon && bMatchNotInProgress)
 	{
@@ -379,7 +375,9 @@ void ABlastCharacter::SimProxiesTurn()
 void ABlastCharacter::ReceiveDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType,
 	class AController* InstigatorController, AActor* DamageCauser)
 {
-	if (bElimmed) return;
+	BlasterGameMode = BlasterGameMode == nullptr? Cast<ABlasterGameMode>(UGameplayStatics::GetGameMode(this)) : BlasterGameMode;
+	if (bElimmed || BlasterGameMode == nullptr) return;
+	Damage = BlasterGameMode->CalculateDamage(InstigatorController, Controller, Damage);
 	
 	float DamageToHealth = Damage;
 	if (Shield > 0.f)
@@ -391,8 +389,8 @@ void ABlastCharacter::ReceiveDamage(AActor* DamagedActor, float Damage, const UD
 		}
 		else
 		{
-			Shield = 0.f;
 			DamageToHealth = FMath::Clamp(DamageToHealth - Shield, 0.f, Damage);
+			Shield = 0.f;
 		}
 	}
 
@@ -404,7 +402,7 @@ void ABlastCharacter::ReceiveDamage(AActor* DamagedActor, float Damage, const UD
 
 	if (Health == 0)
 	{
-		ABlasterGameMode* BlasterGameMode = GetWorld()->GetAuthGameMode<ABlasterGameMode>();
+		BlasterGameMode = BlasterGameMode == nullptr? Cast<ABlasterGameMode>(UGameplayStatics::GetGameMode(this)) : BlasterGameMode;
 		if (BlasterGameMode)
 		{
 			BlasterPlayerController = BlasterPlayerController == nullptr ? Cast<ABlasterPlayerController>(Controller) : BlasterPlayerController;
@@ -424,24 +422,16 @@ bool ABlastCharacter::IsAiming()
 	return Combat && Combat->bAiming;
 }
 
-void ABlastCharacter::Elim()
+void ABlastCharacter::Elim(bool bPlayerLeftGame)
 {
 	DropOrDestroyWeapons();
-	MultiCastElim();
+	MultiCastElim(bPlayerLeftGame);
 	GetWorldTimerManager().SetTimer(ElimTimer, this, &ABlastCharacter::ElimTimerFinished, ElimDelay);
 }
 
-void ABlastCharacter::PlayThrowGrenadeMontage()
+void ABlastCharacter::MultiCastElim_Implementation(bool bPlayerLeftGame)
 {
-	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
-	if (AnimInstance)
-	{
-		AnimInstance->Montage_Play(ThrowGrenadeMontage);
-	}
-}
-
-void ABlastCharacter::MultiCastElim_Implementation()
-{
+	bLeftGame = bPlayerLeftGame;
 	if (BlasterPlayerController) BlasterPlayerController->SetHUDWeaponAmmo(0);
 	
 	bElimmed = true;
@@ -468,10 +458,29 @@ void ABlastCharacter::MultiCastElim_Implementation()
 	}
 }
 
+void ABlastCharacter::PlayThrowGrenadeMontage()
+{
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	if (AnimInstance)
+	{
+		AnimInstance->Montage_Play(ThrowGrenadeMontage);
+	}
+}
+
+
+
+void ABlastCharacter::ServerLeaveGame_Implementation()
+{
+	BlasterGameMode = BlasterGameMode == nullptr? Cast<ABlasterGameMode>(UGameplayStatics::GetGameMode(this)) : BlasterGameMode;
+	BlasterPlayerState = BlasterPlayerState == nullptr? GetPlayerState<ABlasterPlayerState>() : BlasterPlayerState;
+	if (BlasterGameMode && BlasterPlayerState) BlasterGameMode->PlayerLeftGame(BlasterPlayerState);
+}
+
 void ABlastCharacter::ElimTimerFinished()
 {
-	ABlasterGameMode* BlasterGameMode = GetWorld()->GetAuthGameMode<ABlasterGameMode>();
-	if (BlasterGameMode) BlasterGameMode->RequestRespawn(this, Controller);
+	BlasterGameMode = BlasterGameMode == nullptr? Cast<ABlasterGameMode>(UGameplayStatics::GetGameMode(this)) : BlasterGameMode;
+	if (BlasterGameMode && !bLeftGame) BlasterGameMode->RequestRespawn(this, Controller);
+	if (bLeftGame && IsLocallyControlled()) OnLeftGame.Broadcast();
 }
 
 AWeapon* ABlastCharacter::GetEquippedWeapon()
@@ -617,7 +626,7 @@ void ABlastCharacter::UpdateHUDAmmo()
 
 void ABlastCharacter::SpawnDefaultWeapon()
 {
-	ABlasterGameMode* BlasterGameMode = Cast<ABlasterGameMode>(UGameplayStatics::GetGameMode(this));
+	BlasterGameMode = BlasterGameMode == nullptr? Cast<ABlasterGameMode>(UGameplayStatics::GetGameMode(this)) : BlasterGameMode;
 	UWorld* World = GetWorld();
 	if (BlasterGameMode && World && !bElimmed && DefaultWeaponClass)
 	{
@@ -679,6 +688,28 @@ void ABlastCharacter::DropOrDestroyWeapons()
 		{
 			DropOrDestroyWeapon(Combat->SecondaryWeapon);
 		}
+	}
+}
+
+void ABlastCharacter::HighlightEnemies()
+{
+	BlasterGameMode = BlasterGameMode == nullptr? Cast<ABlasterGameMode>(UGameplayStatics::GetGameMode(this)) : BlasterGameMode;
+	
+	ABlasterGameState* BlasterGameState = BlasterGameMode->GetGameState<ABlasterGameState>();
+	for (auto PlayerState: BlasterGameState->PlayerArray)
+	{
+		ABlasterPlayerState* BlasterPlayerState = Cast<ABlasterPlayerState>(PlayerState);
+		ABlasterPlayerState* MyPlayerState = Cast<ABlasterPlayerState>(GetPlayerState());
+		if (BlasterPlayerState && MyPlayerState)
+		{
+			if (BlasterPlayerState->GetTeam() != MyPlayerState->GetTeam())
+			{
+				GetMesh()->SetRenderCustomDepth(true);
+				GetMesh()->SetCustomDepthStencilValue(CUSTOM_DEPTH_BLUE);
+				GetMesh()->MarkRenderStateDirty();
+			}
+		}
+		
 	}
 }
 
